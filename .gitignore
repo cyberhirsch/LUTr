@@ -1,0 +1,14 @@
+# Local source libraries are used to generate the committed static prototype,
+# but are intentionally not pushed to keep the GitHub repository and Pages
+# artifact compact.
+Images/**
+!Images/README.md
+reference-images/**
+submissions/**
+!submissions/README.md
+
+# Local render logs and operating-system files.
+render-previews.out.log
+render-previews.err.log
+.DS_Store
+Thumbs.db

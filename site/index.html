@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Browse, filter, and compare open LUTs across curated reference images." />
+    <meta name="theme-color" content="#0d0f0e" />
+    <title>LUTr — Visual LUT Catalog</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#catalog">Skip to catalog</a>
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="LUTr home"><span class="brand-mark">L</span><span>LUTr</span></a>
+      <nav aria-label="Primary navigation">
+        <a href="#images">Images</a>
+        <a href="#catalog">Catalog</a>
+        <a href="#method">Method</a>
+      </nav>
+      <a class="github-link" href="https://github.com/cyberhirsch/LUTr">GitHub ↗</a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Open color, made visible</p>
+          <h1>See the transform.<br /><span>Know the source.</span></h1>
+          <p class="hero-deck">Choose a reference, scan hundreds of looks, and filter by intent, format, collection, license, and measured behavior.</p>
+          <div class="hero-actions">
+            <a class="primary-button" href="#images">Choose an image</a>
+            <button class="text-button" id="surpriseButton">Surprise me <span>↝</span></button>
+          </div>
+        </div>
+        <div class="hero-stats" aria-label="Catalog summary">
+          <div><strong id="statLuts">—</strong><span>LUT assets</span></div>
+          <div><strong id="statPreviews">—</strong><span>visual previews</span></div>
+          <div><strong id="statCollections">—</strong><span>open collections</span></div>
+        </div>
+      </section>
+
+      <section class="image-browser" id="images" aria-labelledby="imagesTitle">
+        <div class="section-heading">
+          <div><p class="eyebrow">01 / Reference</p><h2 id="imagesTitle">Choose what to test</h2></div>
+          <p>Skin, charts, interiors, landscapes, reflections, and controlled light.</p>
+        </div>
+        <div class="image-rail" id="imageRail" role="list"></div>
+      </section>
+
+      <section class="catalog-shell" id="catalog" aria-labelledby="catalogTitle">
+        <aside class="filters" id="filterPanel">
+          <div class="filter-heading">
+            <div><p class="eyebrow">02 / Refine</p><h2>Filters</h2></div>
+            <button class="quiet-button" id="clearFilters">Reset</button>
+          </div>
+
+          <label class="search-field">
+            <span>Search the catalog</span>
+            <span class="search-box"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="Film, ACES, warm, ARRI…" autocomplete="off" /></span>
+          </label>
+
+          <div class="preset-row" aria-label="Filter presets">
+            <button data-preset="creative">Creative</button>
+            <button data-preset="technical">Technical</button>
+            <button data-preset="commercial">Commercial</button>
+            <button data-preset="mono">B&amp;W</button>
+          </div>
+
+          <label class="switch-row">
+            <span><strong>Visual previews only</strong><small>Hide metadata-only transforms</small></span>
+            <input id="previewOnly" type="checkbox" checked />
+          </label>
+
+          <div id="facetGroups"></div>
+          <p class="filter-help">Click once to include. Click again to exclude. A third click clears the value.</p>
+        </aside>
+
+        <div class="catalog-main">
+          <div class="selected-reference" id="selectedReference">
+            <img id="selectedReferenceImage" alt="" />
+            <div>
+              <p class="eyebrow">Selected reference</p>
+              <h2 id="catalogTitle">Loading…</h2>
+              <p id="selectedReferenceMeta"></p>
+            </div>
+            <button class="quiet-button mobile-filter-button" id="openFilters">Filters <span id="activeFilterCount"></span></button>
+          </div>
+
+          <div class="catalog-toolbar">
+            <div>
+              <strong id="resultCount">— results</strong>
+              <span id="methodLabel">Illustrative preview pipeline</span>
+            </div>
+            <label>Sort
+              <select id="sortSelect">
+                <option value="recommended">Recommended</option>
+                <option value="name">Name A–Z</option>
+                <option value="collection">Collection</option>
+                <option value="documented">Most documented</option>
+                <option value="license">License permissiveness</option>
+                <option value="intensity-asc">Subtle → extreme</option>
+                <option value="intensity-desc">Extreme → subtle</option>
+                <option value="warm">Cool → warm</option>
+                <option value="format">Format</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="active-chips" id="activeChips" aria-live="polite"></div>
+          <div class="lut-grid" id="lutGrid"></div>
+          <div class="empty-state" id="emptyState" hidden>
+            <span>0</span><h3>No transforms survive that combination.</h3>
+            <p>Remove an exclusion or reset to the recommended catalog view.</p>
+            <button class="primary-button" id="emptyReset">Reset filters</button>
+          </div>
+          <button class="load-more" id="loadMore" hidden>Show more transforms</button>
+        </div>
+      </section>
+
+      <section class="method-section" id="method">
+        <p class="eyebrow">03 / Method</p>
+        <div class="method-grid">
+          <h2>Honest previews,<br />not magic thumbnails.</h2>
+          <div>
+            <p>This prototype renders open CUBE, 3DL, and Hald CLUT assets against a normalized browser proxy. Results are explicitly marked illustrative until each transform has verified input and output color-space metadata.</p>
+            <p>Metadata-only CLF and accessibility transforms remain searchable rather than being forced through an invalid pipeline.</p>
+            <a href="https://github.com/cyberhirsch/LUTr/blob/main/PRD_VISUAL_LUT_CATALOG.md">Read the complete methodology ↗</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand" href="./"><span class="brand-mark">L</span><span>LUTr</span></a>
+      <p>Open transforms. Traceable sources. Color-managed ambitions.</p>
+      <p>Built in public on <a href="https://github.com/cyberhirsch/LUTr">GitHub</a>.</p>
+    </footer>
+
+    <div class="filter-scrim" id="filterScrim"></div>
+
+    <dialog class="viewer" id="viewerDialog">
+      <button class="viewer-close" id="viewerClose" aria-label="Close viewer">×</button>
+      <div class="viewer-media" id="viewerMedia">
+        <img id="viewerOriginal" alt="" />
+        <div class="viewer-after" id="viewerAfterWrap"><img id="viewerAfter" alt="" /></div>
+        <span class="before-label">Original</span><span class="after-label">LUT</span>
+        <input id="wipeRange" type="range" min="0" max="100" value="58" aria-label="Before and after split" />
+      </div>
+      <div class="viewer-info">
+        <p class="eyebrow" id="viewerCollection"></p>
+        <h2 id="viewerTitle"></h2>
+        <div class="viewer-badges" id="viewerBadges"></div>
+        <p id="viewerNotice"></p>
+        <dl id="viewerMetadata"></dl>
+        <div class="viewer-actions">
+          <button class="primary-button" id="compareFromViewer">Add to compare</button>
+          <a class="text-button" id="viewerSource" href="#">Open source ↗</a>
+        </div>
+      </div>
+    </dialog>
+
+    <div class="compare-tray" id="compareTray" hidden>
+      <div><strong><span id="compareCount">0</span>/4 selected</strong><span id="compareNames"></span></div>
+      <button class="quiet-button" id="clearCompare">Clear</button>
+      <button class="primary-button" id="openCompare">Compare</button>
+    </div>
+
+    <dialog class="compare-dialog" id="compareDialog">
+      <div class="compare-header"><div><p class="eyebrow">Synchronized view</p><h2>Compare transforms</h2></div><button class="viewer-close" id="compareClose" aria-label="Close comparison">×</button></div>
+      <div class="compare-grid" id="compareGrid"></div>
+    </dialog>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

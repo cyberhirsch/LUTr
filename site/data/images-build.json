@@ -1,0 +1,133 @@
+[
+  {
+    "id": "tears-of-steel",
+    "title": "Tears of Steel",
+    "subtitle": "Face · VFX · cinematic light",
+    "sourceFile": "Images/Tears of Steel/10081.png",
+    "sourceUrl": "https://media.xiph.org/tearsofsteel/tearsofsteel-1080bis-png/10081.png",
+    "license": "CC-BY-3.0",
+    "tags": [
+      "face",
+      "skin",
+      "vfx",
+      "cinematic",
+      "sdr"
+    ],
+    "encoding": "Display-referred sRGB",
+    "proxyMode": "display"
+  },
+  {
+    "id": "sony-f35-still-life",
+    "title": "Sony F35 Still Life",
+    "subtitle": "Charts · practical objects",
+    "sourceFile": "Images/Sony F35 Still Life/SonyF35.StillLife.exr",
+    "sourceUrl": "https://acescentral.com/knowledge-base-2/using-aces-reference-images/",
+    "license": "Academy ACES terms",
+    "tags": [
+      "charts",
+      "camera",
+      "practical",
+      "aces",
+      "hdr"
+    ],
+    "encoding": "Scene-linear ACES reference",
+    "proxyMode": "linear"
+  },
+  {
+    "id": "aces-synthetic-chart",
+    "title": "ACES Synthetic Chart",
+    "subtitle": "Ramps · primaries · regression",
+    "sourceFile": "Images/ACES Synthetic Chart/syntheticChart.01.exr",
+    "sourceUrl": "https://acescentral.com/knowledge-base-2/using-aces-reference-images/",
+    "license": "Academy ACES terms",
+    "tags": [
+      "chart",
+      "synthetic",
+      "ramps",
+      "aces",
+      "technical"
+    ],
+    "encoding": "Scene-linear ACES2065-1",
+    "proxyMode": "linear"
+  },
+  {
+    "id": "openexr-still-life",
+    "title": "OpenEXR StillLife",
+    "subtitle": "HDR · reflective objects",
+    "sourceFile": "Images/OpenEXR StillLife/StillLife.exr",
+    "sourceUrl": "https://github.com/AcademySoftwareFoundation/openexr-images",
+    "license": "BSD-3-Clause",
+    "tags": [
+      "hdr",
+      "reflective",
+      "highlights",
+      "still-life"
+    ],
+    "encoding": "Scene-linear OpenEXR",
+    "proxyMode": "linear"
+  },
+  {
+    "id": "openexr-mt-tam",
+    "title": "OpenEXR MtTamWest",
+    "subtitle": "Landscape · sky · foliage",
+    "sourceFile": "Images/OpenEXR MtTamWest/MtTamWest.exr",
+    "sourceUrl": "https://github.com/AcademySoftwareFoundation/openexr-images",
+    "license": "BSD-3-Clause",
+    "tags": [
+      "landscape",
+      "sky",
+      "foliage",
+      "hdr"
+    ],
+    "encoding": "Scene-linear OpenEXR",
+    "proxyMode": "linear"
+  },
+  {
+    "id": "openexr-desk",
+    "title": "OpenEXR Desk",
+    "subtitle": "Interior · mixed color",
+    "sourceFile": "Images/OpenEXR Desk/Desk.exr",
+    "sourceUrl": "https://github.com/AcademySoftwareFoundation/openexr-images",
+    "license": "BSD-3-Clause",
+    "tags": [
+      "interior",
+      "mixed-color",
+      "objects",
+      "hdr"
+    ],
+    "encoding": "Scene-linear OpenEXR",
+    "proxyMode": "linear"
+  },
+  {
+    "id": "polyhaven-daylight",
+    "title": "Kloofendal Daylight",
+    "subtitle": "Outdoor · cloudy daylight",
+    "sourceFile": "Images/Poly Haven HDRIs/kloofendal_48d_partly_cloudy_2k.hdr",
+    "sourceUrl": "https://polyhaven.com/a/kloofendal_48d_partly_cloudy",
+    "license": "CC0-1.0",
+    "tags": [
+      "hdri",
+      "daylight",
+      "outdoor",
+      "sky"
+    ],
+    "encoding": "Scene-linear Radiance HDR",
+    "proxyMode": "linear"
+  },
+  {
+    "id": "polyhaven-studio",
+    "title": "Studio Small 08",
+    "subtitle": "Artificial · softbox studio",
+    "sourceFile": "Images/Poly Haven HDRIs/studio_small_08_2k.hdr",
+    "sourceUrl": "https://polyhaven.com/a/studio_small_08",
+    "license": "CC0-1.0",
+    "tags": [
+      "hdri",
+      "studio",
+      "artificial",
+      "softbox"
+    ],
+    "encoding": "Scene-linear Radiance HDR",
+    "proxyMode": "linear"
+  }
+]
