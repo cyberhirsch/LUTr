@@ -1067,3 +1067,32 @@ Build a vertical slice containing:
 
 This slice proves the metadata pipeline, color rendering, browser experience,
 and deployment budget before expanding to hundreds of Hald CLUT and CLF assets.
+
+## 26. Color-managed conversion extension
+
+Every built-in and user-uploaded input image must declare the encoding of its
+decoded RGB pixels. An upload cannot enter the comparison workflow until the
+visitor selects that color space.
+
+Every rendered result uses an explicit browser-side path:
+
+`image encoding → LUT input encoding → LUT → LUT output encoding → sRGB display`
+
+When a creative LUT has sufficiently reliable input and output metadata, LUTr
+automatically inserts the required conversions. When either endpoint is
+unknown, the preview remains blocked until the visitor explicitly supplies the
+missing metadata; LUTr must not guess a camera-log encoding.
+
+The LUT detail view must let visitors choose a desired input and output color
+space and download a composed 3D CUBE. Catalog exports may be generated from
+the normalized preview atlas and must be labelled illustrative. A separate
+right-side conversion utility accepts an original 3D CUBE, requires its
+existing input/output path plus the desired new path, and performs the
+conversion entirely in the browser. This original-file route is the
+higher-fidelity option and preserves the source LUT precision before resampling
+to the selected 17³, 33³, or 65³ output grid.
+
+The first client-side matrix/transfer implementation supports sRGB, Rec.709,
+Rec.709 gamma 2.4, linear Rec.709, Display P3, linear Display P3, Rec.2020
+gamma 2.4, linear Rec.2020, ACEScg, and ACES2065-1. Unsupported transfer
+functions remain visibly unavailable rather than receiving approximate labels.

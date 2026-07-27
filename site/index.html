@@ -43,6 +43,10 @@
           <div><p class="eyebrow">01 / Reference</p><h2 id="imagesTitle">Choose what to test</h2></div>
           <div class="reference-actions">
             <p>Skin, charts, interiors, landscapes, reflections, and controlled light.</p>
+            <label class="compact-field">Upload color space
+              <select id="imageColorSpace" required></select>
+              <small>Required; interpreted as the image's decoded RGB encoding.</small>
+            </label>
             <button class="primary-button" id="uploadImageButton">Upload your image</button>
             <input id="imageUpload" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden />
           </div>
@@ -85,6 +89,7 @@
               <p class="eyebrow">Selected reference</p>
               <h2 id="catalogTitle">Loading…</h2>
               <p id="selectedReferenceMeta"></p>
+              <span class="color-path" id="selectedColorSpace"></span>
             </div>
             <button class="quiet-button mobile-filter-button" id="openFilters">Filters <span id="activeFilterCount"></span></button>
           </div>
@@ -125,8 +130,9 @@
         <div class="method-grid">
           <h2>Honest previews,<br />not magic thumbnails.</h2>
           <div>
-            <p>This prototype normalizes open CUBE, 3DL, and Hald CLUT assets into compact LUT atlases, then applies them locally with WebGL. Uploaded images stay in the browser and are never sent to a server.</p>
-            <p>Results remain illustrative until each transform has verified input and output color-space metadata. Metadata-only CLF and accessibility transforms stay searchable rather than being forced through an invalid pipeline.</p>
+              <p>This prototype normalizes open CUBE, 3DL, and Hald CLUT assets into compact LUT atlases, then applies them locally with WebGL. Uploaded images stay in the browser and are never sent to a server.</p>
+              <p>Every reference image has an explicit pixel encoding. LUTr converts that encoding to the selected LUT's input, applies the LUT, then converts its output to the display. Results remain illustrative until each transform has verified input and output metadata.</p>
+              <p>Catalog downloads are composed from LUTr's normalized 25³ preview atlas. For mastering work, upload the original 3D CUBE in the converter so its source precision is preserved.</p>
             <a href="https://github.com/cyberhirsch/LUTr/blob/main/PRD_VISUAL_LUT_CATALOG.md">Read the complete methodology ↗</a>
           </div>
         </div>
@@ -145,6 +151,7 @@
       <button class="viewer-close" id="viewerClose" aria-label="Close viewer">×</button>
       <div class="viewer-media" id="viewerMedia">
         <img id="viewerOriginal" alt="" />
+        <canvas id="viewerOriginalCanvas" hidden></canvas>
         <div class="viewer-after" id="viewerAfterWrap">
           <img id="viewerAfter" alt="" />
           <canvas id="viewerCanvas" hidden></canvas>
@@ -158,6 +165,25 @@
         <div class="viewer-badges" id="viewerBadges"></div>
         <p id="viewerNotice"></p>
         <dl id="viewerMetadata"></dl>
+        <div class="viewer-color-tools">
+          <label>LUT expects
+            <select id="viewerLutInputSpace"></select>
+          </label>
+          <label>LUT outputs
+            <select id="viewerLutOutputSpace"></select>
+          </label>
+          <div class="download-heading">
+            <strong>Download a converted LUT</strong>
+            <small>Compose the required input conversion into a new 33³ CUBE.</small>
+          </div>
+          <label>New LUT input
+            <select id="viewerDownloadInput"></select>
+          </label>
+          <label>New LUT output
+            <select id="viewerDownloadOutput"></select>
+          </label>
+          <button class="quiet-button" id="downloadConvertedLut" disabled>Download converted .cube</button>
+        </div>
         <div class="viewer-actions">
           <button class="primary-button" id="compareFromViewer">Add to compare</button>
           <a class="text-button" id="viewerSource" href="#">Open source ↗</a>
@@ -175,6 +201,41 @@
       <div class="compare-header"><div><p class="eyebrow">Synchronized view</p><h2>Compare transforms</h2></div><button class="viewer-close" id="compareClose" aria-label="Close comparison">×</button></div>
       <div class="compare-grid" id="compareGrid"></div>
     </dialog>
+
+    <button class="converter-tab" id="converterTab" aria-controls="converterPanel" aria-expanded="false">Convert LUT</button>
+    <aside class="converter-panel" id="converterPanel" aria-labelledby="converterTitle" hidden>
+      <div class="converter-header">
+        <div><p class="eyebrow">Local utility</p><h2 id="converterTitle">Convert a LUT</h2></div>
+        <button class="viewer-close" id="converterClose" aria-label="Close LUT converter">×</button>
+      </div>
+      <p>Upload a 3D CUBE, declare its existing color path, then bake a new input and output path into a downloadable CUBE. Files stay in your browser.</p>
+      <label class="file-drop">CUBE file
+        <input id="converterFile" type="file" accept=".cube,text/plain" />
+      </label>
+      <div class="converter-grid">
+        <label>Uploaded LUT expects
+          <select id="converterLutInput"></select>
+        </label>
+        <label>Uploaded LUT outputs
+          <select id="converterLutOutput"></select>
+        </label>
+        <label>New LUT input
+          <select id="converterNewInput"></select>
+        </label>
+        <label>New LUT output
+          <select id="converterNewOutput"></select>
+        </label>
+        <label>Grid size
+          <select id="converterSize">
+            <option value="17">17³</option>
+            <option value="33" selected>33³</option>
+            <option value="65">65³</option>
+          </select>
+        </label>
+      </div>
+      <p class="converter-status" id="converterStatus">Choose a 3D CUBE file to begin.</p>
+      <button class="primary-button" id="converterDownload" disabled>Convert and download</button>
+    </aside>
 
     <script type="module" src="./app.js"></script>
   </body>

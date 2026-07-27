@@ -200,6 +200,25 @@ function filenameTags(title) {
   return tags;
 }
 
+function colorMetadata(folder, transformClass) {
+  if (["stripedpurple-color-grading-luts", "christophwurst-haldclut", "sguyader-filmsim", "natron-haldclut-presets"].includes(folder)) {
+    return { inputColorSpace: "srgb", outputColorSpace: "srgb", colorSpaceConfidence: "assumed-display-referred" };
+  }
+  if (folder === "lauloque-linear-to-blender-filmic") {
+    return { inputColorSpace: "linear-rec709", outputColorSpace: "srgb", colorSpaceConfidence: "documented-primaries-assumed" };
+  }
+  if (folder === "vfxwiki-arri-alexa-luts") {
+    return { inputColorSpace: null, outputColorSpace: "srgb", colorSpaceConfidence: "partial-unverified-input-gamut" };
+  }
+  if (folder === "andrewwillmott-colour-blind-luts") {
+    return { inputColorSpace: "srgb", outputColorSpace: "srgb", colorSpaceConfidence: "assumed-display-referred" };
+  }
+  if (transformClass === "creative-look" || transformClass === "film-emulation") {
+    return { inputColorSpace: null, outputColorSpace: "srgb", colorSpaceConfidence: "camera-profile-input-required" };
+  }
+  return { inputColorSpace: null, outputColorSpace: null, colorSpaceConfidence: "unverified" };
+}
+
 function parseCubeMetrics(content) {
   const size = Number(content.match(/^\s*LUT_3D_SIZE\s+(\d+)/im)?.[1] || 0);
   if (!size) return { size: null, intensity: null, warmth: null, saturation: null, clipping: null };
@@ -297,6 +316,7 @@ for (const [folder, [collection, defaultLicense, transformClass, collectionTags]
     }
     const source = embeddedSource || sidecar.source || `https://github.com/${folder}`;
     const license = (embeddedLicense || sidecar.license || defaultLicense).replace(/\.$/, "");
+    const color = colorMetadata(folder, transformClass);
 
     luts.push({
       id,
@@ -313,6 +333,7 @@ for (const [folder, [collection, defaultLicense, transformClass, collectionTags]
       previewStatus: previewType ? "illustrative" : "metadata-only",
       clientLut: previewType ? `assets/luts/${id}.png` : null,
       clientLutSize: previewType ? 25 : null,
+      ...color,
       size: metrics.size,
       intensity: metrics.intensity,
       warmth: metrics.warmth,
@@ -341,6 +362,7 @@ const output = {
   images: images.map((image) => ({
     ...image,
     sourceFile: undefined,
+    colorSpace: image.colorSpace || "srgb",
     proxy: `assets/images/${image.id}.webp`,
   })),
   luts,

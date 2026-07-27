@@ -1,3 +1,5 @@
+import { colorSpace, conversionMatrix, glMatrix } from "./color-spaces.js";
+
 const vertexSource = `#version 300 es
 in vec2 position;
 out vec2 uv;
@@ -13,6 +15,13 @@ uniform sampler2D sourceImage;
 uniform sampler2D lutAtlas;
 uniform int lutSize;
 uniform int atlasWidth;
+uniform int sourceTransfer;
+uniform int lutInputTransfer;
+uniform int lutOutputTransfer;
+uniform int displayTransfer;
+uniform mat3 sourceToLut;
+uniform mat3 lutToDisplay;
+uniform bool applyLut;
 in vec2 uv;
 out vec4 color;
 
@@ -22,9 +31,36 @@ vec3 readLut(ivec3 p) {
   return texelFetch(lutAtlas, atlasPosition, 0).rgb;
 }
 
-void main() {
-  vec4 source = texture(sourceImage, vec2(uv.x, 1.0 - uv.y));
-  vec3 point = clamp(source.rgb, 0.0, 1.0) * float(lutSize - 1);
+float signedPower(float value, float exponent) {
+  return sign(value) * pow(abs(value), exponent);
+}
+
+float decodeValue(float value, int transfer) {
+  if (transfer == 0) return value;
+  if (transfer == 1) return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4);
+  if (transfer == 2) return value < 0.081 ? value / 4.5 : pow((value + 0.099) / 1.099, 1.0 / 0.45);
+  if (transfer == 3) return signedPower(value, 2.4);
+  return value;
+}
+
+float encodeValue(float value, int transfer) {
+  if (transfer == 0) return value;
+  if (transfer == 1) return value <= 0.0031308 ? 12.92 * value : 1.055 * signedPower(value, 1.0 / 2.4) - 0.055;
+  if (transfer == 2) return value < 0.018 ? 4.5 * value : 1.099 * signedPower(value, 0.45) - 0.099;
+  if (transfer == 3) return signedPower(value, 1.0 / 2.4);
+  return value;
+}
+
+vec3 decodeColor(vec3 value, int transfer) {
+  return vec3(decodeValue(value.r, transfer), decodeValue(value.g, transfer), decodeValue(value.b, transfer));
+}
+
+vec3 encodeColor(vec3 value, int transfer) {
+  return vec3(encodeValue(value.r, transfer), encodeValue(value.g, transfer), encodeValue(value.b, transfer));
+}
+
+vec3 sampleLut(vec3 encoded) {
+  vec3 point = clamp(encoded, 0.0, 1.0) * float(lutSize - 1);
   ivec3 lower = ivec3(floor(point));
   ivec3 upper = min(lower + 1, ivec3(lutSize - 1));
   vec3 mixAmount = fract(point);
@@ -32,7 +68,15 @@ void main() {
   vec3 c10 = mix(readLut(ivec3(lower.r, upper.g, lower.b)), readLut(ivec3(upper.r, upper.g, lower.b)), mixAmount.r);
   vec3 c01 = mix(readLut(ivec3(lower.r, lower.g, upper.b)), readLut(ivec3(upper.r, lower.g, upper.b)), mixAmount.r);
   vec3 c11 = mix(readLut(ivec3(lower.r, upper.g, upper.b)), readLut(ivec3(upper.r, upper.g, upper.b)), mixAmount.r);
-  color = vec4(mix(mix(c00, c10, mixAmount.g), mix(c01, c11, mixAmount.g), mixAmount.b), source.a);
+  return mix(mix(c00, c10, mixAmount.g), mix(c01, c11, mixAmount.g), mixAmount.b);
+}
+
+void main() {
+  vec4 source = texture(sourceImage, vec2(uv.x, 1.0 - uv.y));
+  vec3 lutDomain = encodeColor(sourceToLut * decodeColor(source.rgb, sourceTransfer), lutInputTransfer);
+  vec3 transformed = applyLut ? sampleLut(lutDomain) : lutDomain;
+  vec3 display = encodeColor(lutToDisplay * decodeColor(transformed, lutOutputTransfer), displayTransfer);
+  color = vec4(display, source.a);
 }`;
 
 function compile(gl, type, source) {
@@ -93,12 +137,30 @@ export class LutRenderer {
     return this.cache.get(url);
   }
 
-  async render(source, lutUrl, lutSize, target, maxWidth = 1600) {
+  async render(source, lutUrl, lutSize, target, maxWidth = 1600, options = {}) {
     const sourceImage = typeof source === "string" ? await this.image(source) : source;
     const lutImage = await this.image(lutUrl);
-    const scale = Math.min(1, maxWidth / sourceImage.naturalWidth);
-    const width = Math.max(1, Math.round(sourceImage.naturalWidth * scale));
-    const height = Math.max(1, Math.round(sourceImage.naturalHeight * scale));
+    return this.renderPrepared(sourceImage, lutImage, lutSize, target, maxWidth, options);
+  }
+
+  async renderIdentity(source, target, maxWidth = 1600, options = {}) {
+    const sourceImage = typeof source === "string" ? await this.image(source) : source;
+    return this.renderPrepared(sourceImage, null, 2, target, maxWidth, { ...options, applyLut: false });
+  }
+
+  renderPrepared(sourceImage, lutImage, lutSize, target, maxWidth, options) {
+    const sourceWidth = sourceImage.naturalWidth || sourceImage.width;
+    const sourceHeight = sourceImage.naturalHeight || sourceImage.height;
+    const scale = Math.min(1, maxWidth / sourceWidth);
+    const width = Math.max(1, Math.round(sourceWidth * scale));
+    const height = Math.max(1, Math.round(sourceHeight * scale));
+    const sourceSpace = colorSpace(options.sourceSpace || "srgb");
+    const lutInputSpace = colorSpace(options.lutInputSpace || "srgb");
+    const lutOutputSpace = colorSpace(options.lutOutputSpace || "srgb");
+    const displaySpace = colorSpace(options.displaySpace || "srgb");
+    if (!sourceSpace || !lutInputSpace || !lutOutputSpace || !displaySpace) {
+      throw new Error("The image and LUT color spaces must be defined");
+    }
     const { gl } = this;
     this.canvas.width = target.width = width;
     this.canvas.height = target.height = height;
@@ -114,15 +176,24 @@ export class LutRenderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceImage);
 
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, this.lutTexture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, lutImage);
+    if (lutImage) {
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, this.lutTexture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, lutImage);
+    }
     gl.uniform1i(gl.getUniformLocation(this.program, "lutSize"), lutSize);
-    gl.uniform1i(gl.getUniformLocation(this.program, "atlasWidth"), lutImage.naturalWidth);
+    gl.uniform1i(gl.getUniformLocation(this.program, "atlasWidth"), lutImage?.naturalWidth || lutImage?.width || 1);
+    gl.uniform1i(gl.getUniformLocation(this.program, "sourceTransfer"), sourceSpace.transfer);
+    gl.uniform1i(gl.getUniformLocation(this.program, "lutInputTransfer"), lutInputSpace.transfer);
+    gl.uniform1i(gl.getUniformLocation(this.program, "lutOutputTransfer"), lutOutputSpace.transfer);
+    gl.uniform1i(gl.getUniformLocation(this.program, "displayTransfer"), displaySpace.transfer);
+    gl.uniformMatrix3fv(gl.getUniformLocation(this.program, "sourceToLut"), false, glMatrix(conversionMatrix(sourceSpace.id, lutInputSpace.id)));
+    gl.uniformMatrix3fv(gl.getUniformLocation(this.program, "lutToDisplay"), false, glMatrix(conversionMatrix(lutOutputSpace.id, displaySpace.id)));
+    gl.uniform1i(gl.getUniformLocation(this.program, "applyLut"), options.applyLut === false ? 0 : 1);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
     const context = target.getContext("2d");
