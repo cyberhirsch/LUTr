@@ -11,17 +11,26 @@ The public site is deployed to GitHub Pages from `site/`.
 ## Build the prototype data
 
 ```powershell
+node scripts/convert-all-to-cube.mjs
 node scripts/build-prototype.mjs
-node scripts/build-client-luts.mjs
+node scripts/validate-cubes.mjs
 node scripts/render-prototype-previews.mjs
 ```
 
-The client-LUT and fallback preview renders require FFmpeg with the `lut3d`,
-`haldclut`, `tonemap`, `zscale`, PNG, and WebP encoder components.
+Canonical conversion and fallback preview rendering require FFmpeg/FFprobe with
+the `lut3d`, `haldclut`, `tonemap`, `zscale`, rawvideo, PNG, and WebP
+components.
 
-The static site converts supported LUT assets into compact 25³ atlases. WebGL
-then composes the declared image color space, LUT input space, LUT output
-space, and sRGB display conversion entirely in the browser.
+Every LUT hosted by the static site is a metadata-rich CUBE. Original CUBE
+samples are retained; 3DL, CSP, Hald/strip LUT images, and the supported ACES
+CLF operation set are normalized by `convert-all-to-cube.mjs`. WebGL parses
+those CUBEs directly as floating-point textures and composes the declared image
+space, LUT input space, LUT output space, and sRGB display conversion entirely
+in the browser.
+
+The committed `site/data/cube-manifest.json` records source checksums,
+conversion methods, grid sizes, color-space confidence, and any known
+conversion limitation for all canonical files.
 
 ## Run locally
 

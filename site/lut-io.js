@@ -3,9 +3,13 @@ import { convertColor, colorSpaceLabel } from "./color-spaces.js";
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
 
 export function parseCube(text, filename = "Uploaded LUT") {
-  const size = Number(text.match(/^\s*LUT_3D_SIZE\s+(\d+)/im)?.[1] || 0);
-  if (!size || size < 2 || size > 129) throw new Error("Only 3D CUBE LUTs from size 2 to 129 are supported");
-  if (/^\s*LUT_1D_SIZE\s+/im.test(text)) throw new Error("1D CUBE LUTs are not supported in the converter yet");
+  const size3d = Number(text.match(/^\s*LUT_3D_SIZE\s+(\d+)/im)?.[1] || 0);
+  const size1d = Number(text.match(/^\s*LUT_1D_SIZE\s+(\d+)/im)?.[1] || 0);
+  const size = size3d || size1d;
+  const kind = size3d ? "3D" : "1D";
+  if (!size || size < 2 || (kind === "3D" && size > 129) || (kind === "1D" && size > 65536)) {
+    throw new Error("Supported CUBE sizes are 2–129 for 3D and 2–65536 for 1D");
+  }
   const title = text.match(/^\s*TITLE\s+\"([^\"]+)\"/im)?.[1] || filename.replace(/\.cube$/i, "");
   const domainMin = (text.match(/^\s*DOMAIN_MIN\s+(.+)$/im)?.[1] || "0 0 0").trim().split(/\s+/).map(Number);
   const domainMax = (text.match(/^\s*DOMAIN_MAX\s+(.+)$/im)?.[1] || "1 1 1").trim().split(/\s+/).map(Number);
@@ -16,19 +20,31 @@ export function parseCube(text, filename = "Uploaded LUT") {
     const numbers = clean.split(/\s+/).slice(0, 3).map(Number);
     if (numbers.length === 3 && numbers.every(Number.isFinite)) values.push(numbers);
   }
-  if (values.length < size ** 3) throw new Error(`Expected ${size ** 3} LUT rows, found ${values.length}`);
+  const expected = kind === "3D" ? size ** 3 : size;
+  if (values.length < expected) throw new Error(`Expected ${expected} LUT rows, found ${values.length}`);
   return {
     title,
+    kind,
     size,
     domainMin,
     domainMax,
-    values: values.slice(0, size ** 3),
+    values: values.slice(0, expected),
     declaredInput: text.match(/^#\s*LUTr-Input-Color-Space:\s*(.+)$/im)?.[1]?.trim() || "",
     declaredOutput: text.match(/^#\s*LUTr-Output-Color-Space:\s*(.+)$/im)?.[1]?.trim() || "",
   };
 }
 
 export function sampleLut(lut, color) {
+  if (lut.kind === "1D") {
+    return color.map((value, channel) => {
+      const normalized = clamp((value - lut.domainMin[channel]) / (lut.domainMax[channel] - lut.domainMin[channel]));
+      const point = normalized * (lut.size - 1);
+      const lower = Math.floor(point);
+      const upper = Math.min(lower + 1, lut.size - 1);
+      const amount = point - lower;
+      return lut.values[lower][channel] + (lut.values[upper][channel] - lut.values[lower][channel]) * amount;
+    });
+  }
   const point = color.map((value, channel) => {
     const normalized = (value - lut.domainMin[channel]) / (lut.domainMax[channel] - lut.domainMin[channel]);
     return clamp(normalized) * (lut.size - 1);
@@ -80,21 +96,6 @@ export function composeCube({
     }
   }
   return `${lines.join("\n")}\n`;
-}
-
-export async function atlasToLut(image, size) {
-  const canvas = document.createElement("canvas");
-  canvas.width = image.naturalWidth || image.width;
-  canvas.height = image.naturalHeight || image.height;
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-  context.drawImage(image, 0, 0);
-  const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
-  const values = [];
-  for (let index = 0; index < size ** 3; index += 1) {
-    const offset = index * 4;
-    values.push([pixels[offset] / 255, pixels[offset + 1] / 255, pixels[offset + 2] / 255]);
-  }
-  return { title: "Catalog LUT", size, domainMin: [0,0,0], domainMax: [1,1,1], values };
 }
 
 export function downloadText(filename, text) {

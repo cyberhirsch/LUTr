@@ -1,4 +1,5 @@
 import { colorSpace, conversionMatrix, glMatrix } from "./color-spaces.js";
+import { parseCube, sampleLut } from "./lut-io.js";
 
 const vertexSource = `#version 300 es
 in vec2 position;
@@ -99,6 +100,30 @@ function loadImage(url) {
   });
 }
 
+async function loadCube(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Unable to load ${url} (${response.status})`);
+  const lut = parseCube(await response.text(), url.split("/").at(-1));
+  const renderLut = lut.kind === "1D" ? (() => {
+    const size = 33;
+    const values = [];
+    for (let b = 0; b < size; b += 1) for (let g = 0; g < size; g += 1) for (let r = 0; r < size; r += 1) {
+      values.push(sampleLut(lut, [r, g, b].map((value) => value / (size - 1))));
+    }
+    return { ...lut, kind: "3D", size, values };
+  })() : lut;
+  const width = Math.min(512, renderLut.values.length);
+  const height = Math.ceil(renderLut.values.length / width);
+  const pixels = new Float32Array(width * height * 4);
+  for (let index = 0; index < renderLut.values.length; index += 1) {
+    pixels[index * 4] = renderLut.values[index][0];
+    pixels[index * 4 + 1] = renderLut.values[index][1];
+    pixels[index * 4 + 2] = renderLut.values[index][2];
+    pixels[index * 4 + 3] = 1;
+  }
+  return { ...renderLut, width, height, pixels };
+}
+
 export class LutRenderer {
   constructor() {
     this.canvas = document.createElement("canvas");
@@ -121,6 +146,7 @@ export class LutRenderer {
     this.sourceTexture = gl.createTexture();
     this.lutTexture = gl.createTexture();
     this.cache = new Map();
+    this.lutCache = new Map();
     gl.useProgram(program);
     const position = gl.getAttribLocation(program, "position");
     const buffer = gl.createBuffer();
@@ -137,10 +163,15 @@ export class LutRenderer {
     return this.cache.get(url);
   }
 
+  lut(url) {
+    if (!this.lutCache.has(url)) this.lutCache.set(url, loadCube(url));
+    return this.lutCache.get(url);
+  }
+
   async render(source, lutUrl, lutSize, target, maxWidth = 1600, options = {}) {
     const sourceImage = typeof source === "string" ? await this.image(source) : source;
-    const lutImage = await this.image(lutUrl);
-    return this.renderPrepared(sourceImage, lutImage, lutSize, target, maxWidth, options);
+    const lut = await this.lut(lutUrl);
+    return this.renderPrepared(sourceImage, lut, lut.size, target, maxWidth, options);
   }
 
   async renderIdentity(source, target, maxWidth = 1600, options = {}) {
@@ -148,7 +179,7 @@ export class LutRenderer {
     return this.renderPrepared(sourceImage, null, 2, target, maxWidth, { ...options, applyLut: false });
   }
 
-  renderPrepared(sourceImage, lutImage, lutSize, target, maxWidth, options) {
+  renderPrepared(sourceImage, lut, lutSize, target, maxWidth, options) {
     const sourceWidth = sourceImage.naturalWidth || sourceImage.width;
     const sourceHeight = sourceImage.naturalHeight || sourceImage.height;
     const scale = Math.min(1, maxWidth / sourceWidth);
@@ -176,17 +207,17 @@ export class LutRenderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceImage);
 
-    if (lutImage) {
+    if (lut) {
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, this.lutTexture);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, lutImage);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, lut.width, lut.height, 0, gl.RGBA, gl.FLOAT, lut.pixels);
     }
     gl.uniform1i(gl.getUniformLocation(this.program, "lutSize"), lutSize);
-    gl.uniform1i(gl.getUniformLocation(this.program, "atlasWidth"), lutImage?.naturalWidth || lutImage?.width || 1);
+    gl.uniform1i(gl.getUniformLocation(this.program, "atlasWidth"), lut?.width || 1);
     gl.uniform1i(gl.getUniformLocation(this.program, "sourceTransfer"), sourceSpace.transfer);
     gl.uniform1i(gl.getUniformLocation(this.program, "lutInputTransfer"), lutInputSpace.transfer);
     gl.uniform1i(gl.getUniformLocation(this.program, "lutOutputTransfer"), lutOutputSpace.transfer);

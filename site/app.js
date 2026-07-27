@@ -1,6 +1,6 @@
 import { LutRenderer } from "./lut-renderer.js";
 import { colorSpace, colorSpaceLabel, colorSpaceOptions } from "./color-spaces.js";
-import { atlasToLut, composeCube, downloadText, parseCube } from "./lut-io.js";
+import { composeCube, downloadText, parseCube } from "./lut-io.js";
 
 const state = {
   catalog: null,
@@ -427,7 +427,7 @@ async function openViewer(id) {
   els.viewerTitle.textContent = lut.title;
   els.viewerBadges.innerHTML = [lut.transformClass, lut.format, lut.license, lut.previewStatus, lut.colorSpaceConfidence].map((v) => `<span>${label(v)}</span>`).join("");
   const rows = [
-    ["Format", lut.size ? `${lut.format} · ${lut.size}³` : lut.format],
+    ["Format", lut.size ? `${lut.format} · ${lut.cubeKind === "1D" ? `${lut.size}-sample 1D` : `${lut.size}³`}` : lut.format],
     ["Class", label(lut.transformClass)],
     ["License", lut.license],
     ["LUT input", colorSpaceLabel(lut.inputColorSpace)],
@@ -462,8 +462,9 @@ async function downloadCatalogLut() {
   els.downloadConvertedLut.disabled = true;
   els.downloadConvertedLut.textContent = "Building 33³ CUBE…";
   try {
-    const atlas = await lutRenderer.image(`./${lut.clientLut}`);
-    const data = await atlasToLut(atlas, lut.clientLutSize);
+    const response = await fetch(`./${lut.clientLut}`);
+    if (!response.ok) throw new Error(`Unable to load canonical CUBE (${response.status})`);
+    const data = parseCube(await response.text(), lut.title);
     data.title = lut.title;
     const cube = composeCube({
       lut: data,
@@ -537,7 +538,7 @@ async function loadConverterFile(file) {
   state.uploadedLut = null;
   els.converterDownload.disabled = true;
   if (!file) {
-    els.converterStatus.textContent = "Choose a 3D CUBE file to begin.";
+    els.converterStatus.textContent = "Choose a 1D or 3D CUBE file to begin.";
     return;
   }
   try {
@@ -547,7 +548,8 @@ async function loadConverterFile(file) {
     if (colorSpace(lut.declaredOutput)) els.converterLutOutput.value = lut.declaredOutput;
     if (els.converterLutInput.value) els.converterNewInput.value = els.converterLutInput.value;
     if (els.converterLutOutput.value) els.converterNewOutput.value = els.converterLutOutput.value;
-    els.converterStatus.textContent = `${lut.title} · ${lut.size}³ · ${lut.values.length.toLocaleString()} entries. Declare all four color spaces to enable conversion.`;
+    const dimensions = lut.kind === "1D" ? `${lut.size}-sample 1D` : `${lut.size}³`;
+    els.converterStatus.textContent = `${lut.title} · ${dimensions} · ${lut.values.length.toLocaleString()} entries. Declare all four color spaces to enable conversion.`;
   } catch (error) {
     els.converterStatus.textContent = `Could not read LUT: ${error.message}`;
   }

@@ -1,0 +1,601 @@
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import { spawnSync } from "node:child_process";
+
+const root = process.cwd();
+const submissions = path.join(root, "submissions");
+const outputDir = path.join(root, "site", "assets", "luts");
+const manifestFile = path.join(root, "site", "data", "cube-manifest.json");
+const ffmpeg = process.env.FFMPEG_PATH || "ffmpeg";
+const generatedDate = new Date().toISOString().slice(0, 10);
+const offsetArg = process.argv.find((value) => value.startsWith("--offset="));
+const limitArg = process.argv.find((value) => value.startsWith("--limit="));
+const sourceOffset = Math.max(0, Number(offsetArg?.split("=")[1] || 0));
+const sourceLimit = Math.max(1, Number(limitArg?.split("=")[1] || Number.MAX_SAFE_INTEGER));
+const partialRun = Boolean(offsetArg || limitArg);
+
+const collections = {
+  "stripedpurple-color-grading-luts": {
+    name: "Striped Purple", source: "https://github.com/stripedpurple/color-grading-luts",
+    license: "MIT", licenseUrl: "https://github.com/stripedpurple/color-grading-luts/blob/master/LICENSE",
+    transformClass: "creative-look", tags: ["creative", "stylized", "color-grading"],
+    input: "srgb", output: "srgb", confidence: "assumed-display-referred",
+  },
+  "ircgraphic-d-cinelike-blockbuster": {
+    name: "DJI Blockbuster", source: "https://github.com/IRCGraphic/D-Cinelike-and-Normal-Blockbuster-LUTs",
+    license: "CC0-1.0", licenseUrl: "https://github.com/IRCGraphic/D-Cinelike-and-Normal-Blockbuster-LUTs/blob/main/LICENSE",
+    transformClass: "creative-look", tags: ["creative", "camera", "dji", "d-cinelike", "cinematic"],
+    input: null, output: "srgb", confidence: "camera-profile-input-required",
+  },
+  "jonmatifa-a6000-luts": {
+    name: "Sony a6000", source: "https://github.com/jonmatifa/a6000-LUTs",
+    license: "CC0-1.0", licenseUrl: "https://github.com/jonmatifa/a6000-LUTs/blob/master/LICENSE",
+    transformClass: "camera-transform", tags: ["camera", "sony", "a6000", "log"],
+    input: null, output: null, confidence: "unverified",
+  },
+  "christophwurst-haldclut": {
+    name: "ChristophWurst Hald", source: "https://github.com/ChristophWurst/haldclut",
+    license: "CC-BY-SA-4.0", licenseUrl: "https://github.com/ChristophWurst/haldclut/blob/master/LICENSE",
+    transformClass: "creative-look", tags: ["creative", "hald-clut", "rawtherapee"],
+    input: "srgb", output: "srgb", confidence: "assumed-display-referred",
+  },
+  "sguyader-filmsim": {
+    name: "FilmSim", source: "https://github.com/sguyader/FilmSim",
+    license: "CC0-1.0", licenseUrl: "https://github.com/sguyader/FilmSim/blob/master/LICENSE",
+    transformClass: "film-emulation", tags: ["creative", "film", "film-emulation", "hald-clut"],
+    input: "srgb", output: "srgb", confidence: "assumed-display-referred",
+  },
+  "sverit-hdr2sdr-luts": {
+    name: "HDR2SDR", source: "https://github.com/sverit/HDR2SDR-LUTs",
+    license: "GPL-3.0", licenseUrl: "https://github.com/sverit/HDR2SDR-LUTs/blob/main/LICENSE",
+    transformClass: "tone-map", tags: ["technical", "hdr", "sdr", "tone-map"],
+    input: null, output: null, confidence: "unverified",
+  },
+  "videovillage-red-conversion-luts": {
+    name: "RED Conversion", source: "https://github.com/videovillage/RED-Conversion-LUTs",
+    license: "MIT", licenseUrl: "https://github.com/videovillage/RED-Conversion-LUTs/blob/master/LICENSE.md",
+    transformClass: "camera-transform", tags: ["technical", "camera", "red", "redlogfilm"],
+    input: null, output: null, confidence: "unverified",
+  },
+  "lauloque-linear-to-blender-filmic": {
+    name: "Blender Filmic", source: "https://github.com/Lauloque/LUTs-Linear-to-Blender-s-Filmic-sRGB",
+    license: "GPL-3.0", licenseUrl: "https://github.com/Lauloque/LUTs-Linear-to-Blender-s-Filmic-sRGB/blob/master/LICENSE",
+    transformClass: "display-transform", tags: ["technical", "linear", "blender-filmic", "srgb", "display-transform"],
+    input: "linear-rec709", output: "srgb", confidence: "documented-primaries-assumed",
+  },
+  "natron-haldclut-presets": {
+    name: "Natron HaldCLUT", source: "https://github.com/NatronGitHub/clut",
+    license: "CC-BY-SA-4.0", licenseUrl: "https://github.com/NatronGitHub/clut#license",
+    transformClass: "film-emulation", tags: ["creative", "film", "film-emulation", "hald-clut", "natron"],
+    input: "srgb", output: "srgb", confidence: "assumed-display-referred",
+  },
+  "vfxwiki-arri-alexa-luts": {
+    name: "ARRI Alexa", source: "https://github.com/vfxwiki/ArriAlexaLuts",
+    license: "LGPL-3.0", licenseUrl: "https://github.com/vfxwiki/ArriAlexaLuts/blob/master/LICENSE",
+    transformClass: "camera-transform", tags: ["technical", "camera", "arri", "alexa", "logc"],
+    input: null, output: "srgb", confidence: "partial-unverified-input-gamut",
+  },
+  "andrewwillmott-colour-blind-luts": {
+    name: "Colour-Blind LUTs", source: "https://github.com/andrewwillmott/colour-blind-luts",
+    license: "Unlicense", licenseUrl: "https://github.com/andrewwillmott/colour-blind-luts/blob/master/LICENSE",
+    transformClass: "accessibility", tags: ["technical", "accessibility", "color-vision", "simulation", "correction"],
+    input: "srgb", output: "srgb", confidence: "assumed-display-referred",
+  },
+  "aswf-opencolorio-config-aces": {
+    name: "OCIO ACES", source: "https://github.com/AcademySoftwareFoundation/OpenColorIO-Config-ACES",
+    license: "BSD-3-Clause", licenseUrl: "https://github.com/AcademySoftwareFoundation/OpenColorIO-Config-ACES/blob/main/LICENSE",
+    transformClass: "color-space-conversion", tags: ["technical", "aces", "ocio", "clf", "color-management"],
+    input: null, output: null, confidence: "descriptor-only",
+  },
+};
+
+function walk(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.name === ".git" || entry.name.endsWith(".info.md")) return [];
+    const full = path.join(dir, entry.name);
+    return entry.isDirectory() ? walk(full) : [full];
+  });
+}
+
+function sha256(data) {
+  return crypto.createHash("sha256").update(data).digest("hex");
+}
+
+function slug(value) {
+  return value.normalize("NFKD").replace(/[^\w\s-]/g, "").trim().toLowerCase()
+    .replace(/[\s_]+/g, "-").replace(/-+/g, "-").slice(0, 72);
+}
+
+function shortHash(value) {
+  return sha256(value).slice(0, 9);
+}
+
+function cleanTitle(file, content = "") {
+  const embedded = content.match(/^\s*TITLE\s+"([^"]+)"/im)?.[1];
+  const base = embedded && !/^(generated by resolve|untitled)$/i.test(embedded.trim())
+    ? embedded : path.basename(file, path.extname(file));
+  return base.replaceAll("_", " ").replace(/\s+/g, " ").trim();
+}
+
+function filenameTags(title) {
+  const lower = title.toLowerCase();
+  const tags = [];
+  const rules = [
+    ["black-and-white", /\b(bw|b&w|black.?and.?white|mono|monochrome|acros|neopan|apx)\b/],
+    ["warm", /\b(warm|orange|amber|gold|sunset|sepia)\b/],
+    ["cool", /\b(cool|cold|blue|cyan)\b/],
+    ["high-contrast", /\b(high|strong|hard)[ -]?contrast\b/],
+    ["low-contrast", /\b(low|soft)[ -]?contrast\b/],
+    ["vintage", /\b(vintage|retro|old|faded|instant)\b/],
+    ["cinematic", /\b(cine|cinematic|blockbuster|film)\b/],
+    ["simulation", /\b(simulate|simulation)\b/],
+    ["correction", /\b(correct|correction|daltonise)\b/],
+    ["protanopia", /protan/], ["deuteranopia", /deuter/], ["tritanopia", /tritan/],
+    ["hdr", /\bhdr\b/], ["sdr", /\bsdr\b/],
+  ];
+  for (const [tag, pattern] of rules) if (pattern.test(lower)) tags.push(tag);
+  return tags;
+}
+
+function sidecarMeta(file) {
+  const sidecar = `${file}.info.md`;
+  if (!fs.existsSync(sidecar)) return {};
+  const text = fs.readFileSync(sidecar, "utf8");
+  const field = (name) => text.match(new RegExp(`^- \\*\\*${name}:\\*\\*\\s*(.+)$`, "im"))?.[1]?.trim();
+  return {
+    source: field("Source"), license: field("License"),
+    tags: field("Tags")?.split(",").map((value) => value.trim()).filter(Boolean) || [],
+  };
+}
+
+function embeddedField(content, name) {
+  return content.match(new RegExp(`^#\\s*LUTr-${name}:\\s*(.+)$`, "im"))?.[1]?.trim() || null;
+}
+
+const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
+
+function sample1D(values, value, channel) {
+  const position = clamp(value) * (values.length - 1);
+  const lower = Math.floor(position);
+  const upper = Math.min(lower + 1, values.length - 1);
+  const amount = position - lower;
+  return values[lower][channel] + (values[upper][channel] - values[lower][channel]) * amount;
+}
+
+function sample3D(lut, color) {
+  const point = color.map((value, channel) => {
+    const min = lut.domainMin?.[channel] ?? 0;
+    const max = lut.domainMax?.[channel] ?? 1;
+    return clamp((value - min) / (max - min)) * (lut.size - 1);
+  });
+  const lower = point.map(Math.floor);
+  const upper = lower.map((value) => Math.min(value + 1, lut.size - 1));
+  const amount = point.map((value, channel) => value - lower[channel]);
+  const read = (r, g, b) => lut.values[r + lut.size * g + lut.size * lut.size * b];
+  const mix = (a, b, t) => a.map((value, index) => value + (b[index] - value) * t);
+  const c00 = mix(read(lower[0], lower[1], lower[2]), read(upper[0], lower[1], lower[2]), amount[0]);
+  const c10 = mix(read(lower[0], upper[1], lower[2]), read(upper[0], upper[1], lower[2]), amount[0]);
+  const c01 = mix(read(lower[0], lower[1], upper[2]), read(upper[0], lower[1], upper[2]), amount[0]);
+  const c11 = mix(read(lower[0], upper[1], upper[2]), read(upper[0], upper[1], upper[2]), amount[0]);
+  return mix(mix(c00, c10, amount[1]), mix(c01, c11, amount[1]), amount[2]);
+}
+
+function resample(lut, size) {
+  const values = [];
+  for (let b = 0; b < size; b += 1) for (let g = 0; g < size; g += 1) for (let r = 0; r < size; r += 1) {
+    values.push(sample3D(lut, [r, g, b].map((value) => value / (size - 1))));
+  }
+  return { size, values, domainMin: [0, 0, 0], domainMax: [1, 1, 1] };
+}
+
+function parseCube(text) {
+  const size3d = Number(text.match(/^\s*LUT_3D_SIZE\s+(\d+)/im)?.[1] || 0);
+  const size1d = Number(text.match(/^\s*LUT_1D_SIZE\s+(\d+)/im)?.[1] || 0);
+  const size = size3d || size1d;
+  if (!size) throw new Error("Missing CUBE size");
+  const values = [];
+  for (const line of text.split(/\r?\n/)) {
+    const clean = line.replace(/#.*/, "").trim();
+    if (!/^[-+]?(?:\d|\.\d)/.test(clean)) continue;
+    const row = clean.split(/\s+/).slice(0, 3).map(Number);
+    if (row.length === 3 && row.every(Number.isFinite)) values.push(row);
+  }
+  return {
+    kind: size3d ? "3D" : "1D", size, values,
+    domainMin: (text.match(/^\s*DOMAIN_MIN\s+(.+)$/im)?.[1] || "0 0 0").trim().split(/\s+/).map(Number),
+    domainMax: (text.match(/^\s*DOMAIN_MAX\s+(.+)$/im)?.[1] || "1 1 1").trim().split(/\s+/).map(Number),
+  };
+}
+
+function parse3dl(text) {
+  const lines = text.split(/\r?\n/).map((line) => line.replace(/#.*/, "").trim()).filter(Boolean);
+  const shaper = lines.shift().split(/\s+/).map(Number);
+  const size = shaper.length;
+  const rows = lines.map((line) => line.split(/\s+/).slice(0, 3).map(Number)).filter((row) => row.length === 3);
+  if (rows.length < size ** 3) throw new Error(`Invalid 3DL: expected ${size ** 3} rows`);
+  const scale = Math.max(...rows.flat()) <= 4095 ? 4095 : 65535;
+  const source = [];
+  for (let b = 0; b < size; b += 1) for (let g = 0; g < size; g += 1) for (let r = 0; r < size; r += 1) {
+    source.push(rows[b + size * g + size * size * r].map((value) => value / scale));
+  }
+  const sourceLut = { size, values: source, domainMin: [0, 0, 0], domainMax: [1, 1, 1] };
+  const maxShaper = shaper.at(-1);
+  const mapAxis = (value) => {
+    const target = value * maxShaper;
+    let upper = shaper.findIndex((node) => node >= target);
+    if (upper <= 0) return upper < 0 ? 1 : 0;
+    const lower = upper - 1;
+    return (lower + (target - shaper[lower]) / (shaper[upper] - shaper[lower])) / (size - 1);
+  };
+  const values = [];
+  for (let b = 0; b < size; b += 1) for (let g = 0; g < size; g += 1) for (let r = 0; r < size; r += 1) {
+    values.push(sample3D(sourceLut, [r, g, b].map((value) => mapAxis(value / (size - 1)))));
+  }
+  return { kind: "3D", size, values, domainMin: [0, 0, 0], domainMax: [1, 1, 1] };
+}
+
+function parseAttributes(text) {
+  return Object.fromEntries([...text.matchAll(/([\w:-]+)="([^"]*)"/g)].map((match) => [match[1], match[2]]));
+}
+
+function decodeXml(text = "") {
+  return text.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"').replaceAll("&apos;", "'");
+}
+
+function floatToHalfBits(value) {
+  const buffer = new ArrayBuffer(4);
+  const view = new DataView(buffer);
+  view.setFloat32(0, value, false);
+  const bits = view.getUint32(0, false);
+  const sign = (bits >>> 16) & 0x8000;
+  let exponent = ((bits >>> 23) & 0xff) - 127 + 15;
+  let mantissa = bits & 0x7fffff;
+  if (exponent <= 0) {
+    if (exponent < -10) return sign;
+    mantissa = (mantissa | 0x800000) >>> (1 - exponent);
+    return sign | ((mantissa + 0x1000) >>> 13);
+  }
+  if (exponent >= 31) return sign | 0x7c00;
+  return sign | (exponent << 10) | ((mantissa + 0x1000) >>> 13);
+}
+
+function parseClf(text) {
+  const rootAttrs = parseAttributes(text.match(/<ProcessList\b([^>]*)>/)?.[1] || "");
+  const descriptor = (tag) => decodeXml(text.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`))?.[1]?.trim() || "");
+  const operations = [];
+  const operationPattern = /<(Matrix|Log|Exponent|LUT1D)\b([^>]*)>([\s\S]*?)<\/\1>/g;
+  for (const match of text.matchAll(operationPattern)) {
+    const [, type, attrText, body] = match;
+    const attrs = parseAttributes(attrText);
+    if (type === "Matrix") {
+      const array = body.match(/<Array\b([^>]*)>([\s\S]*?)<\/Array>/);
+      operations.push({ type, matrix: array[2].trim().split(/\s+/).map(Number), dimensions: parseAttributes(array[1]).dim });
+    } else if (type === "Log") {
+      operations.push({ type, style: attrs.style, params: parseAttributes(body.match(/<LogParams\b([^>]*)\/>/)?.[1] || "") });
+    } else if (type === "Exponent") {
+      operations.push({ type, style: attrs.style, params: parseAttributes(body.match(/<ExponentParams\b([^>]*)\/>/)?.[1] || "") });
+    } else {
+      const array = body.match(/<Array\b([^>]*)>([\s\S]*?)<\/Array>/);
+      operations.push({
+        type, halfDomain: attrs.halfDomain === "true",
+        values: array[2].trim().split(/\s+/).map(Number),
+        dimensions: parseAttributes(array[1]).dim,
+      });
+    }
+  }
+
+  const applyLog = (value, operation) => {
+    const p = Object.fromEntries(Object.entries(operation.params).map(([key, item]) => [key, Number(item)]));
+    const base = p.base || 2;
+    if (operation.style !== "cameraLogToLin") throw new Error(`Unsupported CLF Log style: ${operation.style}`);
+    const breakPoint = p.linSideBreak ?? 0;
+    const logAtBreak = p.logSideSlope * (Math.log(p.linSideSlope * breakPoint + p.linSideOffset) / Math.log(base)) + p.logSideOffset;
+    const linearSlope = p.linearSlope || (p.logSideSlope * p.linSideSlope) /
+      (Math.log(base) * (p.linSideSlope * breakPoint + p.linSideOffset));
+    return value >= logAtBreak
+      ? (base ** ((value - p.logSideOffset) / p.logSideSlope) - p.linSideOffset) / p.linSideSlope
+      : breakPoint + (value - logAtBreak) / linearSlope;
+  };
+
+  const applyExponent = (value, operation) => {
+    const exponent = Number(operation.params.exponent);
+    const offset = Number(operation.params.offset || 0);
+    if (operation.style === "basicPassThruRev") return value < 0 ? value : value ** (1 / exponent);
+    if (operation.style === "monCurveRev") {
+      const breakPoint = offset / (exponent - 1);
+      const slope = ((exponent - 1) / offset) ** (exponent - 1) * (exponent / (1 + offset)) ** exponent;
+      const encodedBreak = breakPoint * slope;
+      return value <= encodedBreak ? value / slope : (1 + offset) * Math.max(value, 0) ** (1 / exponent) - offset;
+    }
+    throw new Error(`Unsupported CLF Exponent style: ${operation.style}`);
+  };
+
+  const apply = (input) => {
+    let value = [...input];
+    for (const operation of operations) {
+      if (operation.type === "Matrix") {
+        const m = operation.matrix;
+        value = [
+          m[0] * value[0] + m[1] * value[1] + m[2] * value[2],
+          m[3] * value[0] + m[4] * value[1] + m[5] * value[2],
+          m[6] * value[0] + m[7] * value[1] + m[8] * value[2],
+        ];
+      } else if (operation.type === "Log") {
+        value = value.map((channel) => applyLog(channel, operation));
+      } else if (operation.type === "Exponent") {
+        value = value.map((channel) => applyExponent(channel, operation));
+      } else {
+        const count = Number(operation.dimensions.split(/\s+/)[0]);
+        value = value.map((channel) => operation.halfDomain
+          ? operation.values[floatToHalfBits(channel)]
+          : sample1D(operation.values.map((entry) => [entry, entry, entry]), channel, 0));
+        if (operation.values.length !== count) throw new Error("Invalid CLF LUT1D array");
+      }
+    }
+    return value;
+  };
+
+  const size = 33;
+  const values = [];
+  for (let b = 0; b < size; b += 1) for (let g = 0; g < size; g += 1) for (let r = 0; r < size; r += 1) {
+    values.push(apply([r, g, b].map((value) => value / (size - 1))));
+  }
+  return {
+    kind: "3D", size, values, domainMin: [0, 0, 0], domainMax: [1, 1, 1],
+    upstreamId: rootAttrs.id || null, upstreamName: rootAttrs.name || null,
+    inputDescriptor: descriptor("InputDescriptor") || null,
+    outputDescriptor: descriptor("OutputDescriptor") || null,
+    builtinTransform: descriptor("BuiltinTransform") || null,
+    operations: operations.map((operation) => operation.type).join(" → "),
+  };
+}
+
+function parseCsp(text) {
+  const metadata = text.match(/BEGIN METADATA([\s\S]*?)END METADATA/)?.[1]?.trim() || null;
+  const body = text.replace(/[\s\S]*?END METADATA/, "").trim().split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const pre = [];
+  let cursor = 0;
+  for (let channel = 0; channel < 3; channel += 1) {
+    const count = Number(body[cursor++]);
+    const inputs = body[cursor++].split(/\s+/).map(Number);
+    const outputs = body[cursor++].split(/\s+/).map(Number);
+    if (inputs.length !== count || outputs.length !== count) throw new Error("Invalid CSP pre-LUT");
+    pre.push({ inputs, outputs });
+  }
+  const dimensions = body[cursor++].split(/\s+/).map(Number);
+  if (!dimensions.every((value) => value === dimensions[0])) throw new Error("Non-cubic CSP is unsupported");
+  const size = dimensions[0];
+  const sourceValues = body.slice(cursor).map((line) => line.split(/\s+/).slice(0, 3).map(Number));
+  if (sourceValues.length < size ** 3) throw new Error("Invalid CSP 3D array");
+  const mapPre = (value, curve) => {
+    let upper = curve.inputs.findIndex((node) => node >= value);
+    if (upper <= 0) return upper < 0 ? curve.outputs.at(-1) : curve.outputs[0];
+    const lower = upper - 1;
+    const amount = (value - curve.inputs[lower]) / (curve.inputs[upper] - curve.inputs[lower]);
+    return curve.outputs[lower] + (curve.outputs[upper] - curve.outputs[lower]) * amount;
+  };
+  const source = { size, values: sourceValues, domainMin: [0, 0, 0], domainMax: [1, 1, 1] };
+  const values = [];
+  for (let b = 0; b < size; b += 1) for (let g = 0; g < size; g += 1) for (let r = 0; r < size; r += 1) {
+    const input = [r, g, b].map((value, channel) => mapPre(value / (size - 1), pre[channel]));
+    values.push(sample3D(source, input));
+  }
+  return { kind: "3D", size, values, domainMin: [0, 0, 0], domainMax: [1, 1, 1], upstreamMetadata: metadata };
+}
+
+function imagePixels(file) {
+  const probe = spawnSync("ffprobe", [
+    "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height",
+    "-of", "csv=p=0:s=x", file,
+  ], { encoding: "utf8", windowsHide: true });
+  if (probe.status !== 0) throw new Error(probe.stderr || `ffprobe failed for ${file}`);
+  const [width, height] = probe.stdout.trim().split("x").map(Number);
+  const decoded = spawnSync(ffmpeg, [
+    "-v", "error", "-i", file, "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb48le", "-",
+  ], { encoding: null, maxBuffer: 64 * 1024 * 1024, windowsHide: true });
+  if (decoded.status !== 0) throw new Error(decoded.stderr?.toString() || `ffmpeg failed for ${file}`);
+  const values = [];
+  for (let offset = 0; offset < decoded.stdout.length; offset += 6) {
+    values.push([
+      decoded.stdout.readUInt16LE(offset) / 65535,
+      decoded.stdout.readUInt16LE(offset + 2) / 65535,
+      decoded.stdout.readUInt16LE(offset + 4) / 65535,
+    ]);
+  }
+  return { width, height, values };
+}
+
+function parseLutImage(file, collectionId) {
+  const image = imagePixels(file);
+  const cubeSize = Math.round(Math.cbrt(image.width * image.height));
+  if (cubeSize ** 3 === image.width * image.height) {
+    const lut = { kind: "3D", size: cubeSize, values: image.values, domainMin: [0, 0, 0], domainMax: [1, 1, 1] };
+    const targetSize = collectionId === "andrewwillmott-colour-blind-luts" ? cubeSize : 25;
+    return targetSize === cubeSize ? lut : { kind: "3D", ...resample(lut, targetSize) };
+  }
+  if (collectionId === "andrewwillmott-colour-blind-luts" && image.width === 256) {
+    const ramp = image.values.slice(0, 256);
+    const size = 32;
+    const values = [];
+    for (let b = 0; b < size; b += 1) for (let g = 0; g < size; g += 1) for (let r = 0; r < size; r += 1) {
+      const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / (size - 1);
+      const position = luminance * 255;
+      const lower = Math.floor(position);
+      const upper = Math.min(lower + 1, 255);
+      const amount = position - lower;
+      values.push(ramp[lower].map((value, channel) => value + (ramp[upper][channel] - value) * amount));
+    }
+    return {
+      kind: "3D", size, values, domainMin: [0, 0, 0], domainMax: [1, 1, 1],
+      warning: "Source is a 256-sample false-colour ramp; converted as Rec.709 luminance to RGB.",
+    };
+  }
+  throw new Error(`Unrecognized LUT image layout ${image.width}x${image.height}`);
+}
+
+function cubeMetadata(meta, source, parsed, method, warning) {
+  const fields = [
+    ["Project", "LUTr — LUTrepository"], ["Schema-Version", "1"],
+    ["ID", meta.id], ["Title", meta.title], ["Collection", meta.collection.name],
+    ["Collection-ID", meta.collectionId], ["Source", meta.source],
+    ["Source-File", meta.relativeSource], ["Source-Format", meta.sourceFormat],
+    ["Source-SHA256", meta.sourceSha], ["License", meta.license],
+    ["License-URL", meta.collection.licenseUrl],
+    ["Tags", meta.tags.join(", ")], ["Transform-Class", meta.collection.transformClass],
+    ["Input-Color-Space", meta.input || "Unknown"],
+    ["Output-Color-Space", meta.output || "Unknown"],
+    ["Color-Space-Confidence", meta.confidence],
+    ["Conversion-Method", method], ["Conversion-Date", generatedDate],
+    ["Conversion-Tool", "LUTr scripts/convert-all-to-cube.mjs"],
+    ["Conversion-Grid", parsed.kind === "3D" ? `${parsed.size}x${parsed.size}x${parsed.size}` : `${parsed.size}-sample 1D`],
+    ["Conversion-Warning", warning || parsed.warning || null],
+    ["Upstream-ID", parsed.upstreamId], ["Upstream-Name", parsed.upstreamName],
+    ["Upstream-Input-Descriptor", parsed.inputDescriptor],
+    ["Upstream-Output-Descriptor", parsed.outputDescriptor],
+    ["Upstream-Builtin-Transform", parsed.builtinTransform],
+    ["Upstream-Operations", parsed.operations],
+    ["Upstream-Metadata", parsed.upstreamMetadata?.replace(/\s+/g, " ")],
+    ["Note", "Preserve this metadata and the upstream license notices when redistributing."],
+  ].filter(([, value]) => value != null && value !== "");
+  const upstreamComments = source.split(/\r?\n/).filter((line) => /^\s*#/.test(line) && !/^\s*#\s*LUTr-/i.test(line))
+    .slice(0, 30).map((line) => `# LUTr-Upstream-Comment: ${line.replace(/^\s*#\s?/, "").trim()}`);
+  return [...fields.map(([name, value]) => `# LUTr-${name}: ${String(value).replace(/\r?\n/g, " ")}`), ...upstreamComments].join("\n");
+}
+
+function serializeCube(meta, parsed, header) {
+  const formatNumber = (value) => Number.isFinite(value)
+    ? Number(Number(value).toPrecision(8)).toString()
+    : "0";
+  const lines = [header, `TITLE "${meta.title.replaceAll('"', "'")}"`];
+  if (parsed.kind === "1D") lines.push(`LUT_1D_SIZE ${parsed.size}`);
+  else lines.push(`LUT_3D_SIZE ${parsed.size}`);
+  lines.push(
+    `DOMAIN_MIN ${parsed.domainMin.map(formatNumber).join(" ")}`,
+    `DOMAIN_MAX ${parsed.domainMax.map(formatNumber).join(" ")}`,
+  );
+  for (const row of parsed.values) {
+    lines.push(row.map(formatNumber).join(" "));
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function sourceFiles(collectionId) {
+  const dir = path.join(submissions, collectionId);
+  return walk(dir).filter((file) => {
+    const ext = path.extname(file).toLowerCase();
+    if ([".cube", ".3dl", ".clf", ".csp"].includes(ext)) return true;
+    if (collectionId === "natron-haldclut-presets") return ext === ".png";
+    if (["christophwurst-haldclut", "sguyader-filmsim"].includes(collectionId)) return [".tif", ".tiff"].includes(ext);
+    if (collectionId === "andrewwillmott-colour-blind-luts") {
+      return ext === ".png" && path.basename(path.dirname(file)).toLowerCase() === "luts";
+    }
+    return false;
+  });
+}
+
+if (!fs.existsSync(submissions)) throw new Error("The local submissions source library is required");
+fs.mkdirSync(outputDir, { recursive: true });
+const expected = new Set();
+const previousManifest = partialRun && fs.existsSync(manifestFile)
+  ? JSON.parse(fs.readFileSync(manifestFile, "utf8")).luts || []
+  : [];
+const manifestById = new Map(previousManifest.map((lut) => [lut.id, lut]));
+const failures = [];
+
+const allSources = Object.entries(collections).flatMap(([collectionId, collection]) =>
+  sourceFiles(collectionId).map((file) => ({ collectionId, collection, file })));
+const selectedSources = allSources.slice(sourceOffset, sourceOffset + sourceLimit);
+
+for (const { collectionId, collection, file } of selectedSources) {
+    const sourceBuffer = fs.readFileSync(file);
+    const sourceText = [".cube", ".3dl", ".clf", ".csp"].includes(path.extname(file).toLowerCase())
+      ? sourceBuffer.toString("utf8").replace(/^\uFEFF/, "") : "";
+    const relativeSource = path.relative(root, file).replaceAll("\\", "/");
+    const sourceFormat = path.extname(file).slice(1).toUpperCase();
+    const sidecar = sidecarMeta(file);
+    const title = cleanTitle(file, sourceText);
+    const id = `${slug(collection.name)}--${slug(title)}--${shortHash(relativeSource)}`;
+    const input = embeddedField(sourceText, "Input-Color-Space") || collection.input;
+    const output = embeddedField(sourceText, "Output-Color-Space") || collection.output;
+    const sourceUrl = embeddedField(sourceText, "Source") || sidecar.source || collection.source;
+    const license = (embeddedField(sourceText, "License") || sidecar.license || collection.license).replace(/\.$/, "");
+    const embeddedTags = embeddedField(sourceText, "Tags")?.split(",").map((value) => value.trim()) || [];
+    const tags = [...new Set([...collection.tags, ...embeddedTags, ...(sidecar.tags || []), ...filenameTags(title), "cube"])];
+    const meta = {
+      id, title, collection, collectionId, relativeSource, sourceFormat,
+      sourceSha: sha256(sourceBuffer), source: sourceUrl, license, tags,
+      input, output, confidence: collection.confidence,
+    };
+    try {
+      let parsed;
+      let method;
+      if (sourceFormat === "CUBE") {
+        parsed = parseCube(sourceText);
+        method = "Metadata normalization; numeric LUT samples preserved";
+      } else if (sourceFormat === "3DL") {
+        parsed = parse3dl(sourceText);
+        method = "Native 3DL mesh and shaper converted to 3D CUBE";
+      } else if (sourceFormat === "CLF") {
+        parsed = parseClf(sourceText);
+        method = "CLF operations evaluated as float and sampled to 33x33x33 3D CUBE";
+        meta.input ||= parsed.inputDescriptor;
+        meta.output ||= parsed.outputDescriptor;
+      } else if (sourceFormat === "CSP") {
+        parsed = parseCsp(sourceText);
+        method = "CSP pre-LUT and 3D mesh evaluated at native grid resolution";
+      } else {
+        parsed = parseLutImage(file, collectionId);
+        method = `${sourceFormat} LUT image decoded at 16-bit and sampled to ${parsed.size}x${parsed.size}x${parsed.size} 3D CUBE`;
+      }
+      const warning = sourceFormat === "CLF"
+        ? "A sampled 3D CUBE is bounded to DOMAIN_MIN/MAX 0..1 and cannot preserve CLF values outside its input domain."
+        : parsed.warning;
+      const header = cubeMetadata(meta, sourceText, parsed, method, warning);
+      const outputFile = path.join(outputDir, `${id}.cube`);
+      fs.writeFileSync(outputFile, serializeCube(meta, parsed, header), "utf8");
+      expected.add(path.basename(outputFile));
+      manifestById.set(id, {
+        id, title, collection: collection.name, collectionId,
+        transformClass: collection.transformClass, format: "CUBE",
+        source: sourceUrl, license, licenseUrl: collection.licenseUrl, tags,
+        sourceFile: relativeSource, sourceFormat, sourceSha256: meta.sourceSha,
+        clientLut: `assets/luts/${id}.cube`, clientLutSize: parsed.size,
+        cubeKind: parsed.kind, size: parsed.size, inputColorSpace: meta.input || null,
+        outputColorSpace: meta.output || null, colorSpaceConfidence: meta.confidence,
+        conversionMethod: method, conversionWarning: warning || null,
+        upstreamId: parsed.upstreamId || null,
+        inputDescriptor: parsed.inputDescriptor || null,
+        outputDescriptor: parsed.outputDescriptor || null,
+      });
+      if (manifestById.size % 50 === 0) console.log(`CUBE ${manifestById.size}`);
+    } catch (error) {
+      failures.push({ source: relativeSource, error: String(error.message || error) });
+    }
+}
+
+if (!partialRun) {
+  for (const file of fs.readdirSync(outputDir)) {
+    if (!expected.has(file)) {
+      const target = path.resolve(outputDir, file);
+      if (!target.startsWith(path.resolve(outputDir) + path.sep)) throw new Error(`Refusing to remove ${target}`);
+      fs.rmSync(target, { force: true });
+    }
+  }
+}
+
+const manifest = [...manifestById.values()];
+manifest.sort((a, b) => a.collection.localeCompare(b.collection) || a.title.localeCompare(b.title));
+fs.writeFileSync(manifestFile, JSON.stringify({
+  schemaVersion: 1, generatedAt: `${generatedDate}T00:00:00.000Z`,
+  total: manifest.length, failures, luts: manifest,
+}, null, 2), "utf8");
+console.log(JSON.stringify({
+  processed: selectedSources.length, convertedTotal: manifest.length,
+  sourceTotal: allSources.length, failed: failures.length, outputDir,
+}, null, 2));
+if (failures.length) {
+  console.error(JSON.stringify(failures, null, 2));
+  process.exitCode = 1;
+}

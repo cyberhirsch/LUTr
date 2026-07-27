@@ -1084,9 +1084,9 @@ unknown, the preview remains blocked until the visitor explicitly supplies the
 missing metadata; LUTr must not guess a camera-log encoding.
 
 The LUT detail view must let visitors choose a desired input and output color
-space and download a composed 3D CUBE. Catalog exports may be generated from
-the normalized preview atlas and must be labelled illustrative. A separate
-right-side conversion utility accepts an original 3D CUBE, requires its
+space and download a composed 3D CUBE. Catalog exports are generated directly
+from the canonical floating-point CUBE. A separate
+right-side conversion utility accepts an original 1D or 3D CUBE, requires its
 existing input/output path plus the desired new path, and performs the
 conversion entirely in the browser. This original-file route is the
 higher-fidelity option and preserves the source LUT precision before resampling
@@ -1096,3 +1096,23 @@ The first client-side matrix/transfer implementation supports sRGB, Rec.709,
 Rec.709 gamma 2.4, linear Rec.709, Display P3, linear Display P3, Rec.2020
 gamma 2.4, linear Rec.2020, ACEScg, and ACES2065-1. Unsupported transfer
 functions remain visibly unavailable rather than receiving approximate labels.
+
+## 27. Canonical hosted LUT format
+
+CUBE is the only LUT asset format deployed by LUTr — LUTrepository. Source
+CUBE, 3DL, CSP, CLF, Hald/strip PNG, and Hald TIFF transforms are normalized
+into canonical `.cube` files before publication. Reference and interface
+images are unaffected by this restriction.
+
+Every canonical file carries structured `# LUTr-*` comments for identity,
+collection, source URL and source path, original format and SHA-256, license
+and license URL, tags, transform class, declared input/output encodings and
+confidence, conversion method/tool/date/grid, warnings, and applicable
+upstream identifiers and descriptors. These comments are portable provenance
+records; applications that do not understand them may safely ignore them.
+
+The client parses the hosted CUBE text directly into a floating-point WebGL
+texture. No PNG LUT atlas is deployed or used as an intermediate. Original
+CUBE sample grids are preserved. Sampled conversions must disclose their
+resolution and bounded-domain limitations in both the CUBE header and catalog
+manifest.

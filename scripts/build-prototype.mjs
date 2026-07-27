@@ -272,86 +272,51 @@ function sidecarMeta(file) {
   };
 }
 
-const submissionRoot = path.join(root, "submissions");
-const luts = [];
-
-for (const [folder, [collection, defaultLicense, transformClass, collectionTags]] of Object.entries(collections)) {
-  const dir = path.join(submissionRoot, folder);
-  if (!fs.existsSync(dir)) continue;
-  for (const file of walk(dir)) {
-    const ext = path.extname(file).toLowerCase();
-    const rel = path.relative(root, file).replaceAll("\\", "/");
-    let previewType = null;
-    if (ext === ".cube") previewType = "lut3d";
-    if (ext === ".3dl") previewType = "lut3d";
-    if ((folder === "natron-haldclut-presets" || folder === "christophwurst-haldclut" || folder === "sguyader-filmsim") && [".png", ".tif", ".tiff"].includes(ext)) previewType = "hald";
-    const isCatalogAsset =
-      [".cube", ".3dl", ".clf"].includes(ext) ||
-      previewType === "hald" ||
-      (folder === "andrewwillmott-colour-blind-luts" && ext === ".png");
-    if (!isCatalogAsset) continue;
-
-    const content = [".cube", ".3dl", ".clf"].includes(ext) ? fs.readFileSync(file, "utf8") : "";
-    if (ext === ".cube" && /^\s*LUT_1D_SIZE\s+/im.test(content)) previewType = "lut1d";
-    const sidecar = sidecarMeta(file);
-    const embeddedSource = content.match(/^# LUTr-Source:\s*(.+)$/im)?.[1]?.trim();
-    const embeddedLicense = content.match(/^# LUTr-License:\s*(.+)$/im)?.[1]?.trim();
-    const embeddedTags = content.match(/^# LUTr-Tags:\s*(.+)$/im)?.[1]?.split(",").map((v) => v.trim()) || [];
-    const title = cleanTitle(file, content);
-    const id = `${slug(collection)}--${slug(title)}--${shortHash(rel)}`;
-    const metrics = ext === ".cube" && previewType === "lut3d" ? parseCubeMetrics(content) : {
-      size: ext === ".3dl" ? Number(content.match(/3DMESH\s*\n\s*(\d+)/i)?.[1] || 0) || null : null,
-      intensity: null,
-      warmth: null,
-      saturation: null,
-      clipping: null,
-    };
-    const tags = [...new Set([...collectionTags, ...embeddedTags, ...(sidecar.tags || []), ...filenameTags(title)])];
-    if (metrics.warmth != null) {
-      if (metrics.warmth > 0.035) tags.push("warm");
-      if (metrics.warmth < -0.035) tags.push("cool");
-    }
-    if (metrics.intensity != null) {
-      tags.push(metrics.intensity < 0.06 ? "subtle" : metrics.intensity < 0.15 ? "moderate" : "strong");
-    }
-    const source = embeddedSource || sidecar.source || `https://github.com/${folder}`;
-    const license = (embeddedLicense || sidecar.license || defaultLicense).replace(/\.$/, "");
-    const color = colorMetadata(folder, transformClass);
-
-    luts.push({
-      id,
-      title,
-      collection,
-      collectionId: folder,
-      transformClass,
-      format: ext.slice(1).toUpperCase(),
-      source,
-      license,
-      tags: [...new Set(tags)],
-      sourceFile: rel,
-      previewType,
-      previewStatus: previewType ? "illustrative" : "metadata-only",
-      clientLut: previewType ? `assets/luts/${id}.png` : null,
-      clientLutSize: previewType ? 25 : null,
-      ...color,
-      size: metrics.size,
-      intensity: metrics.intensity,
-      warmth: metrics.warmth,
-      saturation: metrics.saturation,
-      clipping: metrics.clipping,
-      completeness: Number((
-        [title, collection, source, license, transformClass, tags.length, previewType].filter(Boolean).length / 7
-      ).toFixed(2)),
-    });
-  }
+const manifestPath = path.join(dataDir, "cube-manifest.json");
+if (!fs.existsSync(manifestPath)) {
+  throw new Error("Missing site/data/cube-manifest.json; run scripts/convert-all-to-cube.mjs first");
 }
+const canonical = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+if (canonical.failures?.length) throw new Error(`CUBE manifest contains ${canonical.failures.length} failures`);
+const luts = canonical.luts.map((entry) => {
+  const file = path.join(siteDir, ...entry.clientLut.split("/"));
+  if (!fs.existsSync(file)) throw new Error(`Missing canonical CUBE: ${entry.clientLut}`);
+  const content = fs.readFileSync(file, "utf8");
+  const previewType = entry.cubeKind === "1D" ? "lut1d" : "lut3d";
+  const metrics = entry.cubeKind === "3D" ? parseCubeMetrics(content) : {
+    size: entry.size, intensity: null, warmth: null, saturation: null, clipping: null,
+  };
+  const tags = [...new Set(entry.tags || [])];
+  if (metrics.warmth > 0.035) tags.push("warm");
+  if (metrics.warmth < -0.035) tags.push("cool");
+  if (metrics.intensity != null) {
+    tags.push(metrics.intensity < 0.06 ? "subtle" : metrics.intensity < 0.15 ? "moderate" : "strong");
+  }
+  return {
+    ...entry,
+    format: "CUBE",
+    tags: [...new Set(tags)],
+    sourceFile: entry.clientLut,
+    previewType,
+    previewStatus: "client-rendered",
+    clientLutSize: entry.size,
+    size: entry.size,
+    intensity: metrics.intensity,
+    warmth: metrics.warmth,
+    saturation: metrics.saturation,
+    clipping: metrics.clipping,
+    completeness: Number((
+      [entry.title, entry.collection, entry.source, entry.license, entry.transformClass, tags.length, previewType].filter(Boolean).length / 7
+    ).toFixed(2)),
+  };
+});
 
 luts.sort((a, b) => a.collection.localeCompare(b.collection) || a.title.localeCompare(b.title));
 const previewableCount = luts.filter((lut) => lut.previewType).length;
 
 const output = {
   generatedAt: new Date().toISOString(),
-  methodology: "Prototype previews are illustrative display-referred renders. Input/output color-space validation is planned; unknown combinations are labeled.",
+  methodology: "All hosted LUTs are metadata-rich CUBE files rendered client-side. Color-managed previews require explicit image, LUT-input, and LUT-output encodings; unknown paths remain blocked.",
   stats: {
     luts: luts.length,
     previewable: previewableCount,

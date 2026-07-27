@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Validate canonical CUBE catalog
+        run: node scripts/validate-cubes.mjs
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload static site

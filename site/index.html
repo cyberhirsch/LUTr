@@ -130,9 +130,9 @@
         <div class="method-grid">
           <h2>Honest previews,<br />not magic thumbnails.</h2>
           <div>
-              <p>This prototype normalizes open CUBE, 3DL, and Hald CLUT assets into compact LUT atlases, then applies them locally with WebGL. Uploaded images stay in the browser and are never sent to a server.</p>
+              <p>Every hosted transform is a metadata-rich CUBE. LUTr parses its floating-point samples locally and applies them with WebGL; uploaded images stay in the browser and are never sent to a server.</p>
               <p>Every reference image has an explicit pixel encoding. LUTr converts that encoding to the selected LUT's input, applies the LUT, then converts its output to the display. Results remain illustrative until each transform has verified input and output metadata.</p>
-              <p>Catalog downloads are composed from LUTr's normalized 25³ preview atlas. For mastering work, upload the original 3D CUBE in the converter so its source precision is preserved.</p>
+              <p>Catalog downloads are composed directly from the canonical CUBE rather than an 8-bit preview image. Original CUBEs keep their native sample grids; converted sources declare their sampling method and limitations in the header.</p>
             <a href="https://github.com/cyberhirsch/LUTr/blob/main/PRD_VISUAL_LUT_CATALOG.md">Read the complete methodology ↗</a>
           </div>
         </div>
@@ -208,7 +208,7 @@
         <div><p class="eyebrow">Local utility</p><h2 id="converterTitle">Convert a LUT</h2></div>
         <button class="viewer-close" id="converterClose" aria-label="Close LUT converter">×</button>
       </div>
-      <p>Upload a 3D CUBE, declare its existing color path, then bake a new input and output path into a downloadable CUBE. Files stay in your browser.</p>
+      <p>Upload a 1D or 3D CUBE, declare its existing color path, then bake a new input and output path into a downloadable 3D CUBE. Files stay in your browser.</p>
       <label class="file-drop">CUBE file
         <input id="converterFile" type="file" accept=".cube,text/plain" />
       </label>
@@ -233,7 +233,7 @@
           </select>
         </label>
       </div>
-      <p class="converter-status" id="converterStatus">Choose a 3D CUBE file to begin.</p>
+      <p class="converter-status" id="converterStatus">Choose a 1D or 3D CUBE file to begin.</p>
       <button class="primary-button" id="converterDownload" disabled>Convert and download</button>
     </aside>
 
