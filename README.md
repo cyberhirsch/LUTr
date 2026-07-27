@@ -1,4 +1,4 @@
-# LUTr — LUTrepository
+# LUTr
 
 **LUTr is short for LUTrepository.** It is a static, visual catalog for
 browsing open LUT collections against curated reference images. The prototype
