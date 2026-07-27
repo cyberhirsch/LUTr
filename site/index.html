@@ -41,7 +41,11 @@
       <section class="image-browser" id="images" aria-labelledby="imagesTitle">
         <div class="section-heading">
           <div><p class="eyebrow">01 / Reference</p><h2 id="imagesTitle">Choose what to test</h2></div>
-          <p>Skin, charts, interiors, landscapes, reflections, and controlled light.</p>
+          <div class="reference-actions">
+            <p>Skin, charts, interiors, landscapes, reflections, and controlled light.</p>
+            <button class="primary-button" id="uploadImageButton">Upload your image</button>
+            <input id="imageUpload" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden />
+          </div>
         </div>
         <div class="image-rail" id="imageRail" role="list"></div>
       </section>
@@ -88,7 +92,7 @@
           <div class="catalog-toolbar">
             <div>
               <strong id="resultCount">— results</strong>
-              <span id="methodLabel">Illustrative preview pipeline</span>
+              <span id="methodLabel">Client-rendered WebGL previews</span>
             </div>
             <label>Sort
               <select id="sortSelect">
@@ -121,8 +125,8 @@
         <div class="method-grid">
           <h2>Honest previews,<br />not magic thumbnails.</h2>
           <div>
-            <p>This prototype renders open CUBE, 3DL, and Hald CLUT assets against a normalized browser proxy. Results are explicitly marked illustrative until each transform has verified input and output color-space metadata.</p>
-            <p>Metadata-only CLF and accessibility transforms remain searchable rather than being forced through an invalid pipeline.</p>
+            <p>This prototype normalizes open CUBE, 3DL, and Hald CLUT assets into compact LUT atlases, then applies them locally with WebGL. Uploaded images stay in the browser and are never sent to a server.</p>
+            <p>Results remain illustrative until each transform has verified input and output color-space metadata. Metadata-only CLF and accessibility transforms stay searchable rather than being forced through an invalid pipeline.</p>
             <a href="https://github.com/cyberhirsch/LUTr/blob/main/PRD_VISUAL_LUT_CATALOG.md">Read the complete methodology ↗</a>
           </div>
         </div>
@@ -141,7 +145,10 @@
       <button class="viewer-close" id="viewerClose" aria-label="Close viewer">×</button>
       <div class="viewer-media" id="viewerMedia">
         <img id="viewerOriginal" alt="" />
-        <div class="viewer-after" id="viewerAfterWrap"><img id="viewerAfter" alt="" /></div>
+        <div class="viewer-after" id="viewerAfterWrap">
+          <img id="viewerAfter" alt="" />
+          <canvas id="viewerCanvas" hidden></canvas>
+        </div>
         <span class="before-label">Original</span><span class="after-label">LUT</span>
         <input id="wipeRange" type="range" min="0" max="100" value="58" aria-label="Before and after split" />
       </div>

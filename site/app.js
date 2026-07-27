@@ -1,3 +1,5 @@
+import { LutRenderer } from "./lut-renderer.js";
+
 const state = {
   catalog: null,
   imageId: null,
@@ -8,7 +10,11 @@ const state = {
   visible: 60,
   compare: [],
   activeLut: null,
+  customImage: null,
 };
+
+let lutRenderer = null;
+let catalogRenderGeneration = 0;
 
 const facetDefinitions = [
   ["transformClass", "Transform type", (lut) => [lut.transformClass]],
@@ -26,7 +32,7 @@ const els = Object.fromEntries([
   "viewerClose","viewerOriginal","viewerAfter","viewerAfterWrap","wipeRange","viewerCollection",
   "viewerTitle","viewerBadges","viewerNotice","viewerMetadata","viewerSource","compareFromViewer",
   "compareTray","compareCount","compareNames","clearCompare","openCompare","compareDialog",
-  "compareClose","compareGrid",
+  "compareClose","compareGrid","uploadImageButton","imageUpload","viewerCanvas",
 ].map((id) => [id, document.getElementById(id)]));
 
 const label = (value) => value
@@ -58,7 +64,7 @@ function parseUrl() {
 
 function syncUrl() {
   const params = new URLSearchParams();
-  if (state.imageId) params.set("image", state.imageId);
+  if (state.imageId && state.imageId !== "upload") params.set("image", state.imageId);
   if (state.query) params.set("q", state.query);
   if (state.sort !== "recommended") params.set("sort", state.sort);
   if (!state.previewOnly) params.set("all", "1");
@@ -69,6 +75,7 @@ function syncUrl() {
 }
 
 function selectedImage() {
+  if (state.imageId === "upload" && state.customImage) return state.customImage;
   return state.catalog.images.find((image) => image.id === state.imageId) || state.catalog.images[0];
 }
 
@@ -95,10 +102,37 @@ function renderImages() {
 
 function renderSelectedReference() {
   const image = selectedImage();
-  els.selectedReferenceImage.src = `./${image.proxy}`;
+  els.selectedReferenceImage.src = image.id === "upload" ? image.proxy : `./${image.proxy}`;
   els.selectedReferenceImage.alt = image.title;
   els.catalogTitle.textContent = image.title;
   els.selectedReferenceMeta.textContent = `${image.encoding} · ${image.license} · ${image.tags.join(" · ")}`;
+}
+
+async function useUploadedImage(file) {
+  if (!file) return;
+  const objectUrl = URL.createObjectURL(file);
+  const imageElement = new Image();
+  imageElement.decoding = "async";
+  imageElement.src = objectUrl;
+  try {
+    await imageElement.decode();
+  } catch {
+    URL.revokeObjectURL(objectUrl);
+    alert("LUTr could not decode that image. Please use JPEG, PNG, WebP, or AVIF.");
+    return;
+  }
+  if (state.customImage?.proxy) URL.revokeObjectURL(state.customImage.proxy);
+  state.customImage = {
+    id: "upload",
+    title: file.name,
+    subtitle: "Your local image · processed only in this browser",
+    proxy: objectUrl,
+    element: imageElement,
+    license: "Private local upload",
+    tags: ["upload", "local", "client-rendered"],
+    encoding: "Browser-decoded display RGB",
+  };
+  setImage("upload");
 }
 
 function facetState(group, value) {
@@ -194,12 +228,13 @@ function metricTag(lut) {
 function card(lut) {
   const image = selectedImage();
   const preview = previewPath(image.id, lut);
+  const clientPreview = Boolean(lutRenderer && lut.clientLut);
   const tags = [...new Set([metricTag(lut), ...lut.tags])].filter(Boolean).slice(0, 3);
   const selected = state.compare.includes(lut.id);
   return `<article class="lut-card" data-lut="${lut.id}">
     <button class="lut-preview" data-open="${lut.id}" aria-label="View ${lut.title}">
-      ${preview ? `<img src="${preview}" alt="${lut.title} applied to ${image.title}" loading="lazy" />` : `<span class="no-preview">Metadata only<br />Color path not yet validated</span>`}
-      <span class="status">${lut.previewType ? "Illustrative" : "No preview"}</span>
+      ${clientPreview ? `<canvas data-client-preview="${lut.id}" aria-label="${lut.title} applied to ${image.title}"></canvas>` : preview ? `<img src="${preview}" alt="${lut.title} applied to ${image.title}" loading="lazy" />` : `<span class="no-preview">Metadata only<br />Color path not yet validated</span>`}
+      <span class="status">${clientPreview ? "Client rendered" : lut.previewType ? "Illustrative" : "No preview"}</span>
     </button>
     <div class="lut-card-body">
       <div class="lut-card-kicker">${lut.collection} · ${lut.format}</div>
@@ -214,6 +249,7 @@ function card(lut) {
 }
 
 function renderCatalog() {
+  const generation = ++catalogRenderGeneration;
   const results = sortedResults();
   const visible = results.slice(0, state.visible);
   els.resultCount.textContent = `${results.length.toLocaleString()} transform${results.length === 1 ? "" : "s"}`;
@@ -223,6 +259,25 @@ function renderCatalog() {
   els.loadMore.textContent = `Show ${Math.min(60, results.length - visible.length)} more of ${results.length}`;
   els.lutGrid.querySelectorAll("[data-open]").forEach((button) => button.addEventListener("click", () => openViewer(button.dataset.open)));
   els.lutGrid.querySelectorAll("[data-compare]").forEach((button) => button.addEventListener("click", () => toggleCompare(button.dataset.compare)));
+  if (lutRenderer) renderClientThumbnails(visible, generation);
+}
+
+async function renderClientThumbnails(luts, generation) {
+  const image = selectedImage();
+  const source = image.id === "upload" ? image.element : `./${image.proxy}`;
+  for (const lut of luts) {
+    if (generation !== catalogRenderGeneration || selectedImage().id !== image.id) return;
+    const canvas = els.lutGrid.querySelector(`[data-client-preview="${CSS.escape(lut.id)}"]`);
+    if (!canvas || !lut.clientLut) continue;
+    try {
+      await lutRenderer.render(source, `./${lut.clientLut}`, lut.clientLutSize, canvas, 480);
+    } catch {
+      const message = document.createElement("span");
+      message.className = "no-preview";
+      message.innerHTML = "Client preview<br />failed to render";
+      canvas.replaceWith(message);
+    }
+  }
 }
 
 function renderChips() {
@@ -269,17 +324,20 @@ function applyPreset(name) {
   renderAllFilterDependent();
 }
 
-function openViewer(id) {
+async function openViewer(id) {
   const lut = state.catalog.luts.find((item) => item.id === id);
   if (!lut) return;
   state.activeLut = lut;
   const image = selectedImage();
   const preview = previewPath(image.id, lut);
-  els.viewerOriginal.src = `./${image.proxy}`;
-  els.viewerAfter.src = preview || `./${image.proxy}`;
+  const sourceUrl = image.id === "upload" ? image.proxy : `./${image.proxy}`;
+  els.viewerOriginal.src = sourceUrl;
+  els.viewerAfter.src = preview || sourceUrl;
   els.viewerOriginal.alt = `Original ${image.title}`;
   els.viewerAfter.alt = `${lut.title} applied to ${image.title}`;
-  els.viewerAfterWrap.style.clipPath = "inset(0 42% 0 0)";
+  els.viewerCanvas.hidden = true;
+  els.viewerAfter.hidden = false;
+  els.viewerAfterWrap.style.clipPath = "inset(0 0 0 58%)";
   els.wipeRange.value = 58;
   els.viewerCollection.textContent = lut.collection;
   els.viewerTitle.textContent = lut.title;
@@ -298,6 +356,20 @@ function openViewer(id) {
   els.viewerSource.href = lut.source;
   els.compareFromViewer.textContent = state.compare.includes(lut.id) ? "Remove from compare" : "Add to compare";
   els.viewerDialog.showModal();
+  if (lutRenderer && lut.clientLut) {
+    try {
+      const source = image.id === "upload" ? image.element : sourceUrl;
+      await lutRenderer.render(source, `./${lut.clientLut}`, lut.clientLutSize, els.viewerCanvas);
+      if (state.activeLut?.id !== lut.id) return;
+      els.viewerAfter.hidden = true;
+      els.viewerCanvas.hidden = false;
+      els.viewerNotice.textContent = image.id === "upload"
+        ? "Rendered locally in your browser. Your image is not uploaded. This is an illustrative display-RGB application unless the LUT input metadata says otherwise."
+        : "Rendered in your browser from the selected reference proxy. Confirm the transform’s expected input and output before production use.";
+    } catch (error) {
+      els.viewerNotice.textContent = `${els.viewerNotice.textContent} Client renderer fallback: ${error.message}`;
+    }
+  }
 }
 
 function toggleCompare(id) {
@@ -317,15 +389,26 @@ function renderCompareTray() {
   els.openCompare.disabled = state.compare.length < 2;
 }
 
-function openCompareDialog() {
+async function openCompareDialog() {
   const image = selectedImage();
   const luts = state.compare.map((id) => state.catalog.luts.find((lut) => lut.id === id)).filter(Boolean);
   els.compareGrid.innerHTML = luts.map((lut) => `
     <article class="compare-item">
-      <img src="${previewPath(image.id, lut) || `./${image.proxy}`}" alt="${lut.title} on ${image.title}" />
+      <img src="${previewPath(image.id, lut) || image.proxy}" alt="${lut.title} on ${image.title}" />
+      <canvas data-compare-preview="${lut.id}" hidden></canvas>
       <h3>${lut.title}</h3><p>${lut.collection} · ${lut.license}</p>
     </article>`).join("");
   els.compareDialog.showModal();
+  if (!lutRenderer) return;
+  for (const lut of luts) {
+    if (!lut.clientLut) continue;
+    const canvas = els.compareGrid.querySelector(`[data-compare-preview="${CSS.escape(lut.id)}"]`);
+    try {
+      await lutRenderer.render(image.id === "upload" ? image.element : `./${image.proxy}`, `./${lut.clientLut}`, lut.clientLutSize, canvas, 800);
+      canvas.hidden = false;
+      canvas.previousElementSibling.hidden = true;
+    } catch {}
+  }
 }
 
 function bindEvents() {
@@ -343,12 +426,14 @@ function bindEvents() {
     const image = state.catalog.images[Math.floor(Math.random() * state.catalog.images.length)];
     setImage(image.id);
   });
+  els.uploadImageButton.addEventListener("click", () => els.imageUpload.click());
+  els.imageUpload.addEventListener("change", () => useUploadedImage(els.imageUpload.files?.[0]));
   document.querySelectorAll("[data-preset]").forEach((button) => button.addEventListener("click", () => applyPreset(button.dataset.preset)));
   els.openFilters.addEventListener("click", () => { els.filterPanel.classList.add("open"); els.filterScrim.classList.add("open"); });
   els.filterScrim.addEventListener("click", () => { els.filterPanel.classList.remove("open"); els.filterScrim.classList.remove("open"); });
   els.viewerClose.addEventListener("click", () => els.viewerDialog.close());
   els.viewerDialog.addEventListener("click", (event) => { if (event.target === els.viewerDialog) els.viewerDialog.close(); });
-  els.wipeRange.addEventListener("input", () => { els.viewerAfterWrap.style.clipPath = `inset(0 ${100 - Number(els.wipeRange.value)}% 0 0)`; });
+  els.wipeRange.addEventListener("input", () => { els.viewerAfterWrap.style.clipPath = `inset(0 0 0 ${Number(els.wipeRange.value)}%)`; });
   els.compareFromViewer.addEventListener("click", () => state.activeLut && toggleCompare(state.activeLut.id));
   els.clearCompare.addEventListener("click", () => { state.compare = []; renderCompareTray(); renderCatalog(); });
   els.openCompare.addEventListener("click", openCompareDialog);
@@ -361,6 +446,11 @@ async function init() {
   const response = await fetch("./data/catalog.json");
   if (!response.ok) throw new Error(`Catalog failed to load: ${response.status}`);
   state.catalog = await response.json();
+  try {
+    lutRenderer = new LutRenderer();
+  } catch (error) {
+    console.warn(error);
+  }
   if (!state.catalog.images.some((image) => image.id === state.imageId)) state.imageId = state.catalog.images[0].id;
   els.statLuts.textContent = state.catalog.stats.luts.toLocaleString();
   els.statPreviews.textContent = state.catalog.stats.previewable.toLocaleString();

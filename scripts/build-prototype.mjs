@@ -24,6 +24,17 @@ const collections = {
 
 const images = [
   {
+    id: "marcie",
+    title: "Marcie",
+    subtitle: "Film-log response · skin · LAD calibration",
+    sourceFile: "Images/Marcie/Digital_LAD_2048x1556.dpx",
+    sourceUrl: "https://web.archive.org/web/20160408080623id_/http://motion.kodak.com/KodakGCG/uploadedfiles/motion/Digital_LAD_dpx.zip",
+    license: "Kodak archive · redistribution unclear",
+    tags: ["calibration", "film-log", "skin", "lad", "dpx"],
+    encoding: "10-bit Kodak Digital LAD film-log DPX",
+    proxyMode: "display",
+  },
+  {
     id: "tears-of-steel",
     title: "Tears of Steel",
     subtitle: "Face · VFX · cinematic light",
@@ -110,6 +121,28 @@ const images = [
     tags: ["hdri", "studio", "artificial", "softbox"],
     encoding: "Scene-linear Radiance HDR",
     proxyMode: "linear",
+  },
+  {
+    id: "sparks",
+    title: "Sparks",
+    subtitle: "Real HDR footage · practical highlights",
+    sourceFile: "Images/Sparks/SPARKS_ACES_02000.exr",
+    sourceUrl: "https://s3.amazonaws.com/download.opencontent.netflix.com/sparks/aces_image_sequence_59_94_fps/SPARKS_ACES_02000.exr",
+    license: "CC-BY-4.0",
+    tags: ["hdr", "footage", "highlights", "aces", "netflix"],
+    encoding: "Scene-linear ACES",
+    proxyMode: "linear",
+  },
+  {
+    id: "meridian",
+    title: "Meridian",
+    subtitle: "Cinematic skin · production lighting",
+    sourceFile: "Images/Meridian/Meridian_UHD4k5994p_HDR_P3PQ_21000.tif",
+    sourceUrl: "https://s3.amazonaws.com/download.opencontent.netflix.com/Meridian/tiffs/Meridian_UHD4k5994p_HDR_P3PQ_21000.tif",
+    license: "CC-BY-4.0",
+    tags: ["hdr", "skin", "production-lighting", "p3", "pq", "netflix"],
+    encoding: "Display-referred P3/PQ",
+    proxyMode: "display",
   },
 ];
 
@@ -278,6 +311,8 @@ for (const [folder, [collection, defaultLicense, transformClass, collectionTags]
       sourceFile: rel,
       previewType,
       previewStatus: previewType ? "illustrative" : "metadata-only",
+      clientLut: previewType ? `assets/luts/${id}.png` : null,
+      clientLutSize: previewType ? 25 : null,
       size: metrics.size,
       intensity: metrics.intensity,
       warmth: metrics.warmth,

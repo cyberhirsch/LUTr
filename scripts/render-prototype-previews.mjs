@@ -8,8 +8,11 @@ const catalog = JSON.parse(fs.readFileSync(path.join(site, "data", "catalog.json
 const imageBuild = JSON.parse(fs.readFileSync(path.join(site, "data", "images-build.json"), "utf8"));
 const ffmpeg = process.env.FFMPEG_PATH || "ffmpeg";
 const force = process.argv.includes("--force");
+const basesOnly = process.argv.includes("--bases-only");
 const requestedConcurrency = Number(process.env.LUTR_RENDER_CONCURRENCY || 6);
 const concurrency = Number.isFinite(requestedConcurrency) ? Math.max(1, Math.min(12, requestedConcurrency)) : 6;
+const previewWidth = 960;
+const webpQuality = 90;
 
 function run(args) {
   return new Promise((resolve, reject) => {
@@ -32,11 +35,15 @@ async function renderBase(image) {
   fs.mkdirSync(path.dirname(output), { recursive: true });
   if (!force && fs.existsSync(output) && fs.statSync(output).size > 0) return output;
   const input = path.join(root, ...image.sourceFile.split("/"));
-  const filter = image.proxyMode === "linear"
-    ? "format=gbrpf32le,tonemap=tonemap=hable:desat=0,zscale=transferin=linear:primariesin=bt709:matrixin=gbr:transfer=bt709:primaries=bt709:matrix=bt709:range=full,scale=960:-2:flags=lanczos,format=yuv420p"
-    : "scale=960:-2:flags=lanczos,format=yuv420p";
-  await run(["-y", "-v", "error", "-i", input, "-vf", filter, "-frames:v", "1", "-c:v", "libwebp", "-quality", "82", output]);
+  const filter = `${displayPreparation(image)},scale=${previewWidth}:-2:flags=lanczos,format=yuv420p`;
+  await run(["-y", "-v", "error", "-i", input, "-vf", filter, "-frames:v", "1", "-c:v", "libwebp", "-quality", String(webpQuality), output]);
   return output;
+}
+
+function displayPreparation(image) {
+  return image.proxyMode === "linear"
+    ? "format=gbrpf32le,tonemap=tonemap=hable:desat=0,zscale=transferin=linear:primariesin=bt709:matrixin=gbr:transfer=bt709:primaries=bt709:matrix=bt709:range=full"
+    : "format=gbrpf32le";
 }
 
 function safeFilterPath(file) {
@@ -47,17 +54,20 @@ async function renderPreview(job) {
   const output = path.join(site, "assets", "previews", job.image.id, `${job.lut.id}.webp`);
   fs.mkdirSync(path.dirname(output), { recursive: true });
   if (!force && fs.existsSync(output) && fs.statSync(output).size > 0) return;
-  const source = path.join(site, "assets", "images", `${job.image.id}.webp`);
+  // Apply the LUT to the original source in one render pass. Previously these
+  // previews started from an already-compressed WebP proxy, were reduced to
+  // 560 px, and were encoded again at quality 68.
+  const source = path.join(root, ...job.image.sourceFile.split("/"));
   const lutFile = path.join(root, ...job.lut.sourceFile.split("/"));
   if (job.lut.previewType === "lut3d") {
-    const filter = `lut3d=file='${safeFilterPath(lutFile)}':interp=tetrahedral,scale=560:-2:flags=lanczos,format=yuv420p`;
-    await run(["-y", "-v", "error", "-i", source, "-vf", filter, "-frames:v", "1", "-c:v", "libwebp", "-quality", "68", output]);
+    const filter = `${displayPreparation(job.image)},lut3d=file='${safeFilterPath(lutFile)}':interp=tetrahedral,scale=${previewWidth}:-2:flags=lanczos,format=yuv420p`;
+    await run(["-y", "-v", "error", "-i", source, "-vf", filter, "-frames:v", "1", "-c:v", "libwebp", "-quality", String(webpQuality), output]);
   } else if (job.lut.previewType === "lut1d") {
-    const filter = `lut1d=file='${safeFilterPath(lutFile)}':interp=linear,scale=560:-2:flags=lanczos,format=yuv420p`;
-    await run(["-y", "-v", "error", "-i", source, "-vf", filter, "-frames:v", "1", "-c:v", "libwebp", "-quality", "68", output]);
+    const filter = `${displayPreparation(job.image)},lut1d=file='${safeFilterPath(lutFile)}':interp=linear,scale=${previewWidth}:-2:flags=lanczos,format=yuv420p`;
+    await run(["-y", "-v", "error", "-i", source, "-vf", filter, "-frames:v", "1", "-c:v", "libwebp", "-quality", String(webpQuality), output]);
   } else if (job.lut.previewType === "hald") {
-    const filter = "[0:v][1:v]haldclut=interp=tetrahedral,scale=560:-2:flags=lanczos,format=yuv420p";
-    await run(["-y", "-v", "error", "-i", source, "-i", lutFile, "-filter_complex", filter, "-frames:v", "1", "-c:v", "libwebp", "-quality", "68", output]);
+    const filter = `[0:v]${displayPreparation(job.image)}[prepared];[prepared][1:v]haldclut=interp=tetrahedral,scale=${previewWidth}:-2:flags=lanczos,format=yuv420p`;
+    await run(["-y", "-v", "error", "-i", source, "-i", lutFile, "-filter_complex", filter, "-frames:v", "1", "-c:v", "libwebp", "-quality", String(webpQuality), output]);
   }
 }
 
@@ -67,6 +77,10 @@ for (const image of imageBuild) {
 }
 
 const previewable = catalog.luts.filter((lut) => lut.previewType);
+if (basesOnly) {
+  console.log(`DONE bases=${imageBuild.length}`);
+  process.exit(0);
+}
 const jobs = imageBuild.flatMap((image) => previewable.map((lut) => ({ image, lut })));
 let cursor = 0;
 let completed = 0;
