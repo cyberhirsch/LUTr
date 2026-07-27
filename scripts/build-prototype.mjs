@@ -282,7 +282,9 @@ const luts = canonical.luts.map((entry) => {
   const file = path.join(siteDir, ...entry.clientLut.split("/"));
   if (!fs.existsSync(file)) throw new Error(`Missing canonical CUBE: ${entry.clientLut}`);
   const content = fs.readFileSync(file, "utf8");
-  const previewType = entry.cubeKind === "1D" ? "lut1d" : "lut3d";
+  const boundedApproximation = entry.conversionWarning?.includes("bounded to DOMAIN_MIN/MAX");
+  const verifiedColorPath = Boolean(entry.inputColorSpace && entry.outputColorSpace);
+  const previewType = verifiedColorPath && !boundedApproximation ? "lut3d" : null;
   const metrics = entry.cubeKind === "3D" ? parseCubeMetrics(content) : {
     size: entry.size, intensity: null, warmth: null, saturation: null, clipping: null,
   };
@@ -298,7 +300,9 @@ const luts = canonical.luts.map((entry) => {
     tags: [...new Set(tags)],
     sourceFile: entry.clientLut,
     previewType,
-    previewStatus: "client-rendered",
+    previewStatus: boundedApproximation
+      ? "bounded-approximation"
+      : verifiedColorPath ? "client-rendered" : "color-space-required",
     clientLutSize: entry.size,
     size: entry.size,
     intensity: metrics.intensity,
