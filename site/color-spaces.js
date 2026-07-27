@@ -83,7 +83,7 @@ const SPACE_MAP = new Map(COLOR_SPACES.map((space) => [
 ]));
 
 export function colorSpace(id) {
-  return SPACE_MAP.get(id) || null;
+  return SPACE_MAP.get(String(id || "").toLowerCase()) || null;
 }
 
 export function colorSpaceLabel(id) {

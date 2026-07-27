@@ -9,6 +9,12 @@ const outputDir = path.join(root, "site", "assets", "luts");
 const manifestFile = path.join(root, "site", "data", "cube-manifest.json");
 const ffmpeg = process.env.FFMPEG_PATH || "ffmpeg";
 const generatedDate = new Date().toISOString().slice(0, 10);
+const retrievedDate = "2026-07-27";
+const toolVersion = "2.0.0";
+const validColorSpaces = new Set([
+  "srgb", "rec709", "rec709-gamma24", "linear-rec709", "display-p3",
+  "linear-p3", "rec2020-gamma24", "linear-rec2020", "acescg", "aces2065-1",
+]);
 const offsetArg = process.argv.find((value) => value.startsWith("--offset="));
 const limitArg = process.argv.find((value) => value.startsWith("--limit="));
 const sourceOffset = Math.max(0, Number(offsetArg?.split("=")[1] || 0));
@@ -20,73 +26,73 @@ const collections = {
     name: "Striped Purple", source: "https://github.com/stripedpurple/color-grading-luts",
     license: "MIT", licenseUrl: "https://github.com/stripedpurple/color-grading-luts/blob/master/LICENSE",
     transformClass: "creative-look", tags: ["creative", "stylized", "color-grading"],
-    input: "srgb", output: "srgb", confidence: "assumed-display-referred",
+    input: "srgb", output: "srgb", confidence: "assumed-display-referred", licenseBasis: "repo-license-file",
   },
   "ircgraphic-d-cinelike-blockbuster": {
     name: "DJI Blockbuster", source: "https://github.com/IRCGraphic/D-Cinelike-and-Normal-Blockbuster-LUTs",
     license: "CC0-1.0", licenseUrl: "https://github.com/IRCGraphic/D-Cinelike-and-Normal-Blockbuster-LUTs/blob/main/LICENSE",
     transformClass: "creative-look", tags: ["creative", "camera", "dji", "d-cinelike", "cinematic"],
-    input: null, output: "srgb", confidence: "camera-profile-input-required",
+    input: null, output: "srgb", confidence: "camera-profile-input-required", licenseBasis: "repo-license-file",
   },
   "jonmatifa-a6000-luts": {
     name: "Sony a6000", source: "https://github.com/jonmatifa/a6000-LUTs",
     license: "CC0-1.0", licenseUrl: "https://github.com/jonmatifa/a6000-LUTs/blob/master/LICENSE",
     transformClass: "camera-transform", tags: ["camera", "sony", "a6000", "log"],
-    input: null, output: null, confidence: "unverified",
+    input: null, output: null, confidence: "unverified", licenseBasis: "repo-license-file",
   },
   "christophwurst-haldclut": {
     name: "ChristophWurst Hald", source: "https://github.com/ChristophWurst/haldclut",
     license: "CC-BY-SA-4.0", licenseUrl: "https://github.com/ChristophWurst/haldclut/blob/master/LICENSE",
     transformClass: "creative-look", tags: ["creative", "hald-clut", "rawtherapee"],
-    input: "srgb", output: "srgb", confidence: "assumed-display-referred",
+    input: "srgb", output: "srgb", confidence: "assumed-display-referred", licenseBasis: "repo-license-file",
   },
   "sguyader-filmsim": {
     name: "FilmSim", source: "https://github.com/sguyader/FilmSim",
     license: "CC0-1.0", licenseUrl: "https://github.com/sguyader/FilmSim/blob/master/LICENSE",
     transformClass: "film-emulation", tags: ["creative", "film", "film-emulation", "hald-clut"],
-    input: "srgb", output: "srgb", confidence: "assumed-display-referred",
+    input: "srgb", output: "srgb", confidence: "assumed-display-referred", licenseBasis: "repo-license-file",
   },
   "sverit-hdr2sdr-luts": {
     name: "HDR2SDR", source: "https://github.com/sverit/HDR2SDR-LUTs",
     license: "GPL-3.0", licenseUrl: "https://github.com/sverit/HDR2SDR-LUTs/blob/main/LICENSE",
     transformClass: "tone-map", tags: ["technical", "hdr", "sdr", "tone-map"],
-    input: null, output: null, confidence: "unverified",
+    input: null, output: null, confidence: "unverified", licenseBasis: "repo-license-file",
   },
   "videovillage-red-conversion-luts": {
     name: "RED Conversion", source: "https://github.com/videovillage/RED-Conversion-LUTs",
     license: "MIT", licenseUrl: "https://github.com/videovillage/RED-Conversion-LUTs/blob/master/LICENSE.md",
     transformClass: "camera-transform", tags: ["technical", "camera", "red", "redlogfilm"],
-    input: null, output: null, confidence: "unverified",
+    input: null, output: null, confidence: "unverified", licenseBasis: "repo-license-file",
   },
   "lauloque-linear-to-blender-filmic": {
     name: "Blender Filmic", source: "https://github.com/Lauloque/LUTs-Linear-to-Blender-s-Filmic-sRGB",
     license: "GPL-3.0", licenseUrl: "https://github.com/Lauloque/LUTs-Linear-to-Blender-s-Filmic-sRGB/blob/master/LICENSE",
     transformClass: "display-transform", tags: ["technical", "linear", "blender-filmic", "srgb", "display-transform"],
-    input: "linear-rec709", output: "srgb", confidence: "documented-primaries-assumed",
+    input: "linear-rec709", output: "srgb", confidence: "documented-primaries-assumed", licenseBasis: "repo-license-file",
   },
   "natron-haldclut-presets": {
     name: "Natron HaldCLUT", source: "https://github.com/NatronGitHub/clut",
     license: "CC-BY-SA-4.0", licenseUrl: "https://github.com/NatronGitHub/clut#license",
     transformClass: "film-emulation", tags: ["creative", "film", "film-emulation", "hald-clut", "natron"],
-    input: "srgb", output: "srgb", confidence: "assumed-display-referred",
+    input: "srgb", output: "srgb", confidence: "assumed-display-referred", licenseBasis: "repo-license-file",
   },
   "vfxwiki-arri-alexa-luts": {
     name: "ARRI Alexa", source: "https://github.com/vfxwiki/ArriAlexaLuts",
     license: "LGPL-3.0", licenseUrl: "https://github.com/vfxwiki/ArriAlexaLuts/blob/master/LICENSE",
     transformClass: "camera-transform", tags: ["technical", "camera", "arri", "alexa", "logc"],
-    input: null, output: "srgb", confidence: "partial-unverified-input-gamut",
+    input: null, output: "srgb", confidence: "camera-profile-input-required", licenseBasis: "repo-license-file",
   },
   "andrewwillmott-colour-blind-luts": {
     name: "Colour-Blind LUTs", source: "https://github.com/andrewwillmott/colour-blind-luts",
     license: "Unlicense", licenseUrl: "https://github.com/andrewwillmott/colour-blind-luts/blob/master/LICENSE",
     transformClass: "accessibility", tags: ["technical", "accessibility", "color-vision", "simulation", "correction"],
-    input: "srgb", output: "srgb", confidence: "assumed-display-referred",
+    input: "srgb", output: "srgb", confidence: "assumed-display-referred", licenseBasis: "repo-license-file",
   },
   "aswf-opencolorio-config-aces": {
     name: "OCIO ACES", source: "https://github.com/AcademySoftwareFoundation/OpenColorIO-Config-ACES",
     license: "BSD-3-Clause", licenseUrl: "https://github.com/AcademySoftwareFoundation/OpenColorIO-Config-ACES/blob/main/LICENSE",
     transformClass: "color-space-conversion", tags: ["technical", "aces", "ocio", "clf", "color-management"],
-    input: null, output: null, confidence: "descriptor-only",
+    input: null, output: null, confidence: "descriptor-only", licenseBasis: "repo-license-file",
   },
 };
 
@@ -145,12 +151,105 @@ function sidecarMeta(file) {
   const field = (name) => text.match(new RegExp(`^- \\*\\*${name}:\\*\\*\\s*(.+)$`, "im"))?.[1]?.trim();
   return {
     source: field("Source"), license: field("License"),
+    licenseUrl: field("License URL"), attribution: field("Attribution"),
+    assetUrl: field("Asset URL"), author: field("Author"), authorUrl: field("Author URL"),
+    retrieved: field("Retrieved"), licenseBasis: field("License Basis"),
     tags: field("Tags")?.split(",").map((value) => value.trim()).filter(Boolean) || [],
   };
 }
 
-function embeddedField(content, name) {
-  return content.match(new RegExp(`^#\\s*LUTr-${name}:\\s*(.+)$`, "im"))?.[1]?.trim() || null;
+function parseLutrHeader(content) {
+  const fields = new Map();
+  for (const line of content.split(/\r?\n/)) {
+    if (!line.startsWith("#")) break;
+    const match = line.match(/^#\s*LUTr-([A-Za-z0-9-]+):\s*(.*)$/);
+    if (match) fields.set(match[1], match[2].trim());
+  }
+  return fields;
+}
+
+function normalizedColorSpace(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return validColorSpaces.has(normalized) ? normalized : "";
+}
+
+function identitySlug(value) {
+  return value.normalize("NFKD").replace(/[^\w\s-]/g, "").trim().toLowerCase()
+    .replace(/[\s_]+/g, "-").replace(/-+/g, "-");
+}
+
+function stableId(header, parsed, sourceSha) {
+  if (header.get("Schema-Version") === "2" && header.get("ID")) return header.get("ID");
+  if (parsed.upstreamId) return `upstream-${identitySlug(parsed.upstreamId)}--${shortHash(parsed.upstreamId)}`;
+  return `sha256-${sourceSha}`;
+}
+
+function colorParts(id) {
+  return {
+    srgb: ["rec709", "srgb"], rec709: ["rec709", "rec709"],
+    "rec709-gamma24": ["rec709", "gamma24"], "linear-rec709": ["rec709", "linear"],
+    "display-p3": ["display-p3", "srgb"], "linear-p3": ["display-p3", "linear"],
+    "rec2020-gamma24": ["rec2020", "gamma24"], "linear-rec2020": ["rec2020", "linear"],
+    acescg: ["aces-ap1", "linear"], "aces2065-1": ["aces-ap0", "linear"],
+  }[id] || ["unspecified", "unspecified"];
+}
+
+function descriptorParts(descriptor = "") {
+  const value = descriptor.toLowerCase();
+  let gamut = "unspecified";
+  if (/aces2065|ap0/.test(value)) gamut = "aces-ap0";
+  else if (/ap1|acescg/.test(value)) gamut = "aces-ap1";
+  else if (/rec\.? ?709/.test(value)) gamut = "rec709";
+  else if (/rec\.? ?2020/.test(value)) gamut = "rec2020";
+  else if (/p3/.test(value)) gamut = "display-p3";
+  else if (/adobe ?rgb/.test(value)) gamut = "adobe-rgb";
+  else if (/arri wide gamut 4/.test(value)) gamut = "arri-wide-gamut-4";
+  else if (/arri wide gamut 3/.test(value)) gamut = "arri-wide-gamut-3";
+  else if (/blackmagic wide gamut/.test(value)) gamut = "blackmagic-wide-gamut";
+  else if (/davinci wide gamut/.test(value)) gamut = "davinci-wide-gamut";
+  else if (/cinema gamut/.test(value)) gamut = "canon-cinema-gamut";
+  else if (/d-gamut/.test(value)) gamut = "dji-d-gamut";
+  else if (/v-gamut/.test(value)) gamut = "panasonic-v-gamut";
+  else if (/redwidegamut/.test(value)) gamut = "red-wide-gamut-rgb";
+  else if (/venice s-gamut3\.cine/.test(value)) gamut = "sony-venice-s-gamut3-cine";
+  else if (/venice s-gamut3/.test(value)) gamut = "sony-venice-s-gamut3";
+  else if (/s-gamut3\.cine/.test(value)) gamut = "sony-s-gamut3-cine";
+  else if (/s-gamut3/.test(value)) gamut = "sony-s-gamut3";
+  else if (/s-gamut/.test(value)) gamut = "sony-s-gamut";
+
+  let transfer = "unspecified";
+  if (/linear/.test(value)) transfer = "linear";
+  else if (/apple log/.test(value)) transfer = "apple-log";
+  else if (/logc3/.test(value)) transfer = "arri-logc3-ei800";
+  else if (/logc4/.test(value)) transfer = "arri-logc4";
+  else if (/blackmagic film/.test(value)) transfer = "blackmagic-film-gen5";
+  else if (/davinci intermediate/.test(value)) transfer = "davinci-intermediate";
+  else if (/clog ?2|canon log 2/.test(value)) transfer = "canon-log2";
+  else if (/clog ?3|canon log 3/.test(value)) transfer = "canon-log3";
+  else if (/d-log/.test(value)) transfer = "dji-d-log";
+  else if (/v-log/.test(value)) transfer = "panasonic-v-log";
+  else if (/log3g10/.test(value)) transfer = "red-log3g10";
+  else if (/s-log2/.test(value)) transfer = "sony-s-log2";
+  else if (/s-log3/.test(value)) transfer = "sony-s-log3";
+  else if (/srgb/.test(value)) transfer = "srgb";
+  else if (/rec\.? ?709 camera oetf/.test(value)) transfer = "rec709";
+  else if (/1\.8 gamma/.test(value)) transfer = "gamma18";
+  else if (/2\.2 gamma/.test(value)) transfer = "gamma22";
+  else if (/2\.4 gamma|rec\.?1886/.test(value)) transfer = "gamma24";
+  else if (/2084|pq/.test(value)) transfer = "pq";
+  return [gamut, transfer];
+}
+
+function descriptorColorSpace(descriptor = "") {
+  const value = descriptor.trim().toLowerCase();
+  if (value === "aces2065-1") return "aces2065-1";
+  if (value === "srgb" || value === "srgb encoded rgb") return "srgb";
+  if (/^linear p3 primaries/.test(value)) return "linear-p3";
+  if (/^linear rec\.?2020 primaries/.test(value)) return "linear-rec2020";
+  if (/^linear rec\.?709 primaries/.test(value)) return "linear-rec709";
+  if (/^2\.4 gamma-corrected rec\.?709 primaries/.test(value)) return "rec709-gamma24";
+  if (/^rec\.?709 camera oetf rec\.?709 primaries/.test(value)) return "rec709";
+  return "";
 }
 
 const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
@@ -203,6 +302,7 @@ function parseCube(text) {
   }
   return {
     kind: size3d ? "3D" : "1D", size, values,
+    originalGrid: size3d ? `${size}x${size}x${size}` : `${size}`,
     domainMin: (text.match(/^\s*DOMAIN_MIN\s+(.+)$/im)?.[1] || "0 0 0").trim().split(/\s+/).map(Number),
     domainMax: (text.match(/^\s*DOMAIN_MAX\s+(.+)$/im)?.[1] || "1 1 1").trim().split(/\s+/).map(Number),
   };
@@ -232,7 +332,12 @@ function parse3dl(text) {
   for (let b = 0; b < size; b += 1) for (let g = 0; g < size; g += 1) for (let r = 0; r < size; r += 1) {
     values.push(sample3D(sourceLut, [r, g, b].map((value) => mapAxis(value / (size - 1)))));
   }
-  return { kind: "3D", size, values, domainMin: [0, 0, 0], domainMax: [1, 1, 1] };
+  return {
+    kind: "3D", size, values, originalGrid: `${size}x${size}x${size}`,
+    domainMin: [0, 0, 0], domainMax: [1, 1, 1],
+    shaper: `${size}-node integer input shaper from 3DL`,
+    interpolation: "linear",
+  };
 }
 
 function parseAttributes(text) {
@@ -344,11 +449,15 @@ function parseClf(text) {
   }
   return {
     kind: "3D", size, values, domainMin: [0, 0, 0], domainMax: [1, 1, 1],
+    originalGrid: operations.find((operation) => operation.type === "LUT1D")
+      ?.dimensions?.split(/\s+/)[0] || "analytic",
     upstreamId: rootAttrs.id || null, upstreamName: rootAttrs.name || null,
     inputDescriptor: descriptor("InputDescriptor") || null,
     outputDescriptor: descriptor("OutputDescriptor") || null,
     builtinTransform: descriptor("BuiltinTransform") || null,
-    operations: operations.map((operation) => operation.type).join(" → "),
+    operations: operations.map((operation) => operation.type).join(" -> "),
+    upstreamDomain: "unbounded",
+    interpolation: "linear",
   };
 }
 
@@ -382,7 +491,12 @@ function parseCsp(text) {
     const input = [r, g, b].map((value, channel) => mapPre(value / (size - 1), pre[channel]));
     values.push(sample3D(source, input));
   }
-  return { kind: "3D", size, values, domainMin: [0, 0, 0], domainMax: [1, 1, 1], upstreamMetadata: metadata };
+  return {
+    kind: "3D", size, values, originalGrid: `${size}x${size}x${size}`,
+    domainMin: [0, 0, 0], domainMax: [1, 1, 1], upstreamMetadata: metadata,
+    shaper: "CSP per-channel pre-LUT baked into the 3D samples",
+    interpolation: "trilinear",
+  };
 }
 
 function imagePixels(file) {
@@ -411,9 +525,16 @@ function parseLutImage(file, collectionId) {
   const image = imagePixels(file);
   const cubeSize = Math.round(Math.cbrt(image.width * image.height));
   if (cubeSize ** 3 === image.width * image.height) {
-    const lut = { kind: "3D", size: cubeSize, values: image.values, domainMin: [0, 0, 0], domainMax: [1, 1, 1] };
+    const lut = {
+      kind: "3D", size: cubeSize, values: image.values,
+      originalGrid: `${cubeSize}x${cubeSize}x${cubeSize}`,
+      domainMin: [0, 0, 0], domainMax: [1, 1, 1],
+    };
     const targetSize = collectionId === "andrewwillmott-colour-blind-luts" ? cubeSize : 25;
-    return targetSize === cubeSize ? lut : { kind: "3D", ...resample(lut, targetSize) };
+    return targetSize === cubeSize ? lut : {
+      kind: "3D", ...resample(lut, targetSize), originalGrid: lut.originalGrid,
+      interpolation: "trilinear",
+    };
   }
   if (collectionId === "andrewwillmott-colour-blind-luts" && image.width === 256) {
     const ramp = image.values.slice(0, 256);
@@ -429,48 +550,102 @@ function parseLutImage(file, collectionId) {
     }
     return {
       kind: "3D", size, values, domainMin: [0, 0, 0], domainMax: [1, 1, 1],
+      originalGrid: "256", interpolation: "linear",
       warning: "Source is a 256-sample false-colour ramp; converted as Rec.709 luminance to RGB.",
     };
   }
   throw new Error(`Unrecognized LUT image layout ${image.width}x${image.height}`);
 }
 
+function unitDomain(parsed) {
+  return parsed.domainMin.every((value) => value === 0)
+    && parsed.domainMax.every((value) => value === 1);
+}
+
+function canonicalizeCube(parsed) {
+  if (parsed.kind === "1D") {
+    const size = Math.min(33, parsed.size);
+    const values = [];
+    for (let b = 0; b < size; b += 1) for (let g = 0; g < size; g += 1) for (let r = 0; r < size; r += 1) {
+      const input = [r, g, b].map((value) => value / (size - 1));
+      values.push(input.map((value, channel) => {
+        const min = parsed.domainMin[channel] ?? 0;
+        const max = parsed.domainMax[channel] ?? 1;
+        return sample1D(parsed.values, (value - min) / (max - min), channel);
+      }));
+    }
+    return {
+      ...parsed, kind: "3D", size, values, domainMin: [0, 0, 0], domainMax: [1, 1, 1],
+      interpolation: "linear",
+      canonicalWarning: `A ${parsed.size}-sample 1D CUBE was sampled to ${size}x${size}x${size} for browser-compatible 3D CUBE hosting.`,
+    };
+  }
+  if (!unitDomain(parsed)) {
+    return {
+      ...parsed, ...resample(parsed, parsed.size), interpolation: "trilinear",
+      canonicalWarning: `The source domain ${parsed.domainMin.join(" ")} to ${parsed.domainMax.join(" ")} was normalized to 0..1.`,
+    };
+  }
+  return parsed;
+}
+
+function joinWarnings(...warnings) {
+  return warnings.filter(Boolean).join(" ");
+}
+
 function cubeMetadata(meta, source, parsed, method, warning) {
-  const fields = [
-    ["Project", "LUTr — LUTrepository"], ["Schema-Version", "1"],
+  const [inputGamut, inputTransfer] = meta.input
+    ? colorParts(meta.input) : descriptorParts(parsed.inputDescriptor);
+  const [outputGamut, outputTransfer] = meta.output
+    ? colorParts(meta.output) : descriptorParts(parsed.outputDescriptor);
+  const requiredFields = [
+    ["Schema-Version", "2"],
     ["ID", meta.id], ["Title", meta.title], ["Collection", meta.collection.name],
     ["Collection-ID", meta.collectionId], ["Source", meta.source],
+    ["Retrieved", meta.retrieved],
     ["Source-File", meta.relativeSource], ["Source-Format", meta.sourceFormat],
     ["Source-SHA256", meta.sourceSha], ["License", meta.license],
-    ["License-URL", meta.collection.licenseUrl],
-    ["Tags", meta.tags.join(", ")], ["Transform-Class", meta.collection.transformClass],
-    ["Input-Color-Space", meta.input || "Unknown"],
-    ["Output-Color-Space", meta.output || "Unknown"],
+    ["License-URL", meta.licenseUrl], ["License-Basis", meta.licenseBasis],
+    ["Transform-Class", meta.collection.transformClass], ["Tags", meta.tags.join(", ")],
+    ["Input-Color-Space", meta.input],
+    ["Input-Gamut", inputGamut], ["Input-Transfer", inputTransfer],
+    ["Output-Color-Space", meta.output],
+    ["Output-Gamut", outputGamut], ["Output-Transfer", outputTransfer],
     ["Color-Space-Confidence", meta.confidence],
-    ["Conversion-Method", method], ["Conversion-Date", generatedDate],
-    ["Conversion-Tool", "LUTr scripts/convert-all-to-cube.mjs"],
-    ["Conversion-Grid", parsed.kind === "3D" ? `${parsed.size}x${parsed.size}x${parsed.size}` : `${parsed.size}-sample 1D`],
-    ["Conversion-Warning", warning || parsed.warning || null],
+    ["Domain-Normalized", "true"], ["Shaper", parsed.shaper || "none"],
+    ["Original-Grid", parsed.originalGrid],
+    ["Conversion-Grid", `${parsed.size}x${parsed.size}x${parsed.size}`],
+    ["Conversion-Interpolation", parsed.interpolation || "none"],
+    ["Conversion-Method", method],
+    ["Conversion-Tool", `LUTr scripts/convert-all-to-cube.mjs ${toolVersion}`],
+    ["Conversion-Date", generatedDate],
+  ];
+  const optionalFields = [
+    ["Asset-URL", meta.assetUrl], ["Author", meta.author], ["Author-URL", meta.authorUrl],
+    ["Attribution", meta.attribution], ["Source-Labels", meta.sourceLabels],
+    ["Conversion-Warning", warning],
     ["Upstream-ID", parsed.upstreamId], ["Upstream-Name", parsed.upstreamName],
     ["Upstream-Input-Descriptor", parsed.inputDescriptor],
     ["Upstream-Output-Descriptor", parsed.outputDescriptor],
     ["Upstream-Builtin-Transform", parsed.builtinTransform],
     ["Upstream-Operations", parsed.operations],
+    ["Upstream-Domain", parsed.upstreamDomain],
     ["Upstream-Metadata", parsed.upstreamMetadata?.replace(/\s+/g, " ")],
     ["Note", "Preserve this metadata and the upstream license notices when redistributing."],
   ].filter(([, value]) => value != null && value !== "");
-  const upstreamComments = source.split(/\r?\n/).filter((line) => /^\s*#/.test(line) && !/^\s*#\s*LUTr-/i.test(line))
-    .slice(0, 30).map((line) => `# LUTr-Upstream-Comment: ${line.replace(/^\s*#\s?/, "").trim()}`);
-  return [...fields.map(([name, value]) => `# LUTr-${name}: ${String(value).replace(/\r?\n/g, " ")}`), ...upstreamComments].join("\n");
+  const upstreamComments = source.split(/\r?\n/)
+    .filter((line) => /^\s*#/.test(line) && !/^\s*#\s*LUTr-/i.test(line))
+    .slice(0, 30)
+    .map((line) => `# LUTr-Upstream-Comment: ${line.replace(/^\s*#\s?/, "").trim()}`);
+  const line = ([name, value]) => `# LUTr-${name}: ${String(value ?? "").replace(/\r?\n/g, " ")}`;
+  return [...requiredFields.map(line), ...optionalFields.map(line), ...upstreamComments].join("\n");
 }
 
 function serializeCube(meta, parsed, header) {
   const formatNumber = (value) => Number.isFinite(value)
     ? Number(Number(value).toPrecision(8)).toString()
     : "0";
-  const lines = [header, `TITLE "${meta.title.replaceAll('"', "'")}"`];
-  if (parsed.kind === "1D") lines.push(`LUT_1D_SIZE ${parsed.size}`);
-  else lines.push(`LUT_3D_SIZE ${parsed.size}`);
+  const lines = [header, "", `TITLE "${meta.title.replaceAll('"', "'")}"`, `LUT_3D_SIZE ${parsed.size}`];
   lines.push(
     `DOMAIN_MIN ${parsed.domainMin.map(formatNumber).join(" ")}`,
     `DOMAIN_MAX ${parsed.domainMax.map(formatNumber).join(" ")}`,
@@ -513,20 +688,33 @@ for (const { collectionId, collection, file } of selectedSources) {
     const sourceText = [".cube", ".3dl", ".clf", ".csp"].includes(path.extname(file).toLowerCase())
       ? sourceBuffer.toString("utf8").replace(/^\uFEFF/, "") : "";
     const relativeSource = path.relative(root, file).replaceAll("\\", "/");
-    const sourceFormat = path.extname(file).slice(1).toUpperCase();
+    const extension = path.extname(file).toLowerCase();
+    const sourceFormat = extension === ".png" ? "HALD-PNG"
+      : [".tif", ".tiff"].includes(extension) ? "HALD-TIF"
+        : extension.slice(1).toUpperCase();
     const sidecar = sidecarMeta(file);
-    const title = cleanTitle(file, sourceText);
-    const id = `${slug(collection.name)}--${slug(title)}--${shortHash(relativeSource)}`;
-    const input = embeddedField(sourceText, "Input-Color-Space") || collection.input;
-    const output = embeddedField(sourceText, "Output-Color-Space") || collection.output;
-    const sourceUrl = embeddedField(sourceText, "Source") || sidecar.source || collection.source;
-    const license = (embeddedField(sourceText, "License") || sidecar.license || collection.license).replace(/\.$/, "");
-    const embeddedTags = embeddedField(sourceText, "Tags")?.split(",").map((value) => value.trim()) || [];
+    const sourceHeader = parseLutrHeader(sourceText);
+    const headerValue = (name, fallback = "") => sourceHeader.has(name) ? sourceHeader.get(name) : fallback;
+    const title = headerValue("Title", cleanTitle(file, sourceText));
+    const input = normalizedColorSpace(headerValue("Input-Color-Space", collection.input));
+    const output = normalizedColorSpace(headerValue("Output-Color-Space", collection.output));
+    const sourceUrl = headerValue("Source", sidecar.source || collection.source);
+    const license = headerValue("License", sidecar.license || collection.license).replace(/\.$/, "");
+    const licenseUrl = headerValue("License-URL", sidecar.licenseUrl || collection.licenseUrl);
+    const embeddedTags = headerValue("Tags").split(",").map((value) => value.trim()).filter(Boolean);
     const tags = [...new Set([...collection.tags, ...embeddedTags, ...(sidecar.tags || []), ...filenameTags(title), "cube"])];
+    const sourceSha = sha256(sourceBuffer);
     const meta = {
-      id, title, collection, collectionId, relativeSource, sourceFormat,
-      sourceSha: sha256(sourceBuffer), source: sourceUrl, license, tags,
-      input, output, confidence: collection.confidence,
+      title, collection, collectionId, relativeSource, sourceFormat,
+      sourceSha, source: sourceUrl, license, licenseUrl, tags, input, output,
+      confidence: headerValue("Color-Space-Confidence", collection.confidence),
+      retrieved: headerValue("Retrieved", sidecar.retrieved || retrievedDate),
+      licenseBasis: headerValue("License-Basis", sidecar.licenseBasis || collection.licenseBasis),
+      assetUrl: headerValue("Asset-URL", sidecar.assetUrl),
+      author: headerValue("Author", sidecar.author),
+      authorUrl: headerValue("Author-URL", sidecar.authorUrl),
+      attribution: headerValue("Attribution", sidecar.attribution),
+      sourceLabels: headerValue("Source-Labels"),
     };
     try {
       let parsed;
@@ -540,8 +728,6 @@ for (const { collectionId, collection, file } of selectedSources) {
       } else if (sourceFormat === "CLF") {
         parsed = parseClf(sourceText);
         method = "CLF operations evaluated as float and sampled to 33x33x33 3D CUBE";
-        meta.input ||= parsed.inputDescriptor;
-        meta.output ||= parsed.outputDescriptor;
       } else if (sourceFormat === "CSP") {
         parsed = parseCsp(sourceText);
         method = "CSP pre-LUT and 3D mesh evaluated at native grid resolution";
@@ -549,9 +735,32 @@ for (const { collectionId, collection, file } of selectedSources) {
         parsed = parseLutImage(file, collectionId);
         method = `${sourceFormat} LUT image decoded at 16-bit and sampled to ${parsed.size}x${parsed.size}x${parsed.size} 3D CUBE`;
       }
-      const warning = sourceFormat === "CLF"
-        ? "A sampled 3D CUBE is bounded to DOMAIN_MIN/MAX 0..1 and cannot preserve CLF values outside its input domain."
-        : parsed.warning;
+      const originalParsed = parsed;
+      parsed = canonicalizeCube(parsed);
+      parsed.originalGrid ||= originalParsed.originalGrid;
+      if (!meta.input) meta.input = descriptorColorSpace(parsed.inputDescriptor);
+      if (!meta.output) meta.output = descriptorColorSpace(parsed.outputDescriptor);
+      if (meta.confidence === "descriptor-only" && meta.input && meta.output) {
+        meta.confidence = "declared-by-source";
+      }
+      if (originalParsed.kind === "1D") {
+        method = `Source 1D CUBE sampled to browser-compatible ${parsed.size}x${parsed.size}x${parsed.size} 3D CUBE`;
+      } else if (!unitDomain(originalParsed)) {
+        method = `${method}; source domain normalized to 0..1`;
+      }
+      meta.id = stableId(sourceHeader, parsed, sourceSha);
+      const id = meta.id;
+      const [inputGamut, inputTransfer] = meta.input
+        ? colorParts(meta.input) : descriptorParts(parsed.inputDescriptor);
+      const [outputGamut, outputTransfer] = meta.output
+        ? colorParts(meta.output) : descriptorParts(parsed.outputDescriptor);
+      const warning = joinWarnings(
+        sourceFormat === "CLF"
+          ? "A sampled 3D CUBE is bounded to DOMAIN_MIN/MAX 0..1 and cannot preserve CLF values outside its input domain."
+          : null,
+        parsed.warning,
+        parsed.canonicalWarning,
+      );
       const header = cubeMetadata(meta, sourceText, parsed, method, warning);
       const outputFile = path.join(outputDir, `${id}.cube`);
       fs.writeFileSync(outputFile, serializeCube(meta, parsed, header), "utf8");
@@ -559,11 +768,19 @@ for (const { collectionId, collection, file } of selectedSources) {
       manifestById.set(id, {
         id, title, collection: collection.name, collectionId,
         transformClass: collection.transformClass, format: "CUBE",
-        source: sourceUrl, license, licenseUrl: collection.licenseUrl, tags,
+        source: sourceUrl, assetUrl: meta.assetUrl || null,
+        author: meta.author || null, authorUrl: meta.authorUrl || null,
+        retrieved: meta.retrieved, license, licenseUrl, licenseBasis: meta.licenseBasis,
+        attribution: meta.attribution || null, tags,
         sourceFile: relativeSource, sourceFormat, sourceSha256: meta.sourceSha,
         clientLut: `assets/luts/${id}.cube`, clientLutSize: parsed.size,
         cubeKind: parsed.kind, size: parsed.size, inputColorSpace: meta.input || null,
         outputColorSpace: meta.output || null, colorSpaceConfidence: meta.confidence,
+        inputGamut, inputTransfer, outputGamut, outputTransfer,
+        domainNormalized: true, shaper: parsed.shaper || "none",
+        originalGrid: parsed.originalGrid,
+        conversionGrid: `${parsed.size}x${parsed.size}x${parsed.size}`,
+        conversionInterpolation: parsed.interpolation || "none",
         conversionMethod: method, conversionWarning: warning || null,
         upstreamId: parsed.upstreamId || null,
         inputDescriptor: parsed.inputDescriptor || null,
@@ -588,7 +805,7 @@ if (!partialRun) {
 const manifest = [...manifestById.values()];
 manifest.sort((a, b) => a.collection.localeCompare(b.collection) || a.title.localeCompare(b.title));
 fs.writeFileSync(manifestFile, JSON.stringify({
-  schemaVersion: 1, generatedAt: `${generatedDate}T00:00:00.000Z`,
+  schemaVersion: 2, generatedAt: `${generatedDate}T00:00:00.000Z`,
   total: manifest.length, failures, luts: manifest,
 }, null, 2), "utf8");
 console.log(JSON.stringify({

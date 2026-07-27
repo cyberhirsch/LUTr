@@ -29,8 +29,8 @@ export function parseCube(text, filename = "Uploaded LUT") {
     domainMin,
     domainMax,
     values: values.slice(0, expected),
-    declaredInput: text.match(/^#\s*LUTr-Input-Color-Space:\s*(.+)$/im)?.[1]?.trim() || "",
-    declaredOutput: text.match(/^#\s*LUTr-Output-Color-Space:\s*(.+)$/im)?.[1]?.trim() || "",
+    declaredInput: text.match(/^#\s*LUTr-Input-Color-Space:\s*(.*)$/im)?.[1]?.trim().toLowerCase() || "",
+    declaredOutput: text.match(/^#\s*LUTr-Output-Color-Space:\s*(.*)$/im)?.[1]?.trim().toLowerCase() || "",
   };
 }
 
