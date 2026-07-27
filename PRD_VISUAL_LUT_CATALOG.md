@@ -1,6 +1,6 @@
-# Product Requirements Document: Visual LUT Catalog
+# Product Requirements Document: LUTr — LUTrepository Visual Catalog
 
-**Working title:** LUTr Visual Catalog  
+**Working title:** LUTr — LUTrepository  
 **Document status:** Draft for implementation  
 **Target release:** MVP  
 **Hosting:** GitHub Pages  
@@ -9,8 +9,8 @@
 
 ## 1. Product summary
 
-LUTr Visual Catalog is a fast, static website for discovering, understanding,
-and comparing open, license-cleared LUTs.
+LUTr, short for **LUTrepository**, is a fast, static visual catalog for
+discovering, understanding, and comparing open, license-cleared LUTs.
 
 Visitors first browse a curated set of reference images. After choosing an
 image, they see that image rendered through every compatible LUT in a visual

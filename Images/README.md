@@ -1,8 +1,9 @@
-# Reference Images
+# LUTr — LUTrepository Reference Images
 
-This folder contains a compact set of reference images for LUT evaluation,
-color-pipeline QA, HDR testing, and visual regression work. Every media file has
-a same-filename `.info.md` sidecar containing searchable tags, provenance,
+This folder contains the reference-image library for **LUTr**, short for
+**LUTrepository**. It provides a compact set of images for LUT evaluation,
+color-pipeline QA, HDR testing, and visual regression work. Every media file
+has a same-filename `.info.md` sidecar containing searchable tags, provenance,
 license terms, color/encoding notes, attribution, and a SHA-256 checksum.
 
 ## Contents

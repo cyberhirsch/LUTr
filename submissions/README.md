@@ -1,6 +1,7 @@
-# License-Cleared LUT Submissions
+# LUTr — LUTrepository License-Cleared Submissions
 
-This folder contains shallow checkouts of every collection in
+This folder is the licensed submission library for **LUTr**, short for
+**LUTrepository**. It contains shallow checkouts of every collection in
 `OPEN_SOURCE_LUT_COLLECTIONS.md` that had an explicit repository or asset
 license. Collections listed under provenance caveats or the not-included
 section were deliberately not downloaded.

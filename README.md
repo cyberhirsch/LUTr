@@ -1,9 +1,9 @@
-# LUTr
+# LUTr — LUTrepository
 
-LUTr is a static, visual catalog for browsing open LUT collections against
-curated reference images. The prototype includes faceted include/exclude
-filters, measured sorting, provenance and license metadata, a before/after
-viewer, and multi-LUT comparison.
+**LUTr is short for LUTrepository.** It is a static, visual catalog for
+browsing open LUT collections against curated reference images. The prototype
+includes faceted include/exclude filters, measured sorting, provenance and
+license metadata, a before/after viewer, and multi-LUT comparison.
 
 The public site is deployed to GitHub Pages from `site/`.
 

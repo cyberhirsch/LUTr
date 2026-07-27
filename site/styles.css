@@ -27,6 +27,9 @@ img { display: block; max-width: 100%; }
 .topbar { height: 72px; padding: 0 clamp(1rem, 3vw, 3rem); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--ink) 88%, transparent); backdrop-filter: blur(18px); }
 .brand { display: inline-flex; align-items: center; gap: .7rem; text-decoration: none; font-weight: 700; font-size: 1.15rem; }
 .brand-mark { width: 31px; aspect-ratio: 1; display: grid; place-items: center; background: var(--acid); color: var(--ink); border-radius: 50%; font-family: var(--mono); }
+.brand-name { display: flex; flex-direction: column; line-height: 1; }
+.brand-name strong { font-size: 1rem; }
+.brand-name small { color: var(--muted); font: .5rem var(--mono); letter-spacing: .05em; margin-top: .22rem; }
 .topbar nav { display: flex; gap: 2rem; }
 .topbar nav a, .github-link { text-decoration: none; color: var(--muted); font-size: .85rem; }
 .topbar nav a:hover, .github-link:hover { color: var(--paper); }

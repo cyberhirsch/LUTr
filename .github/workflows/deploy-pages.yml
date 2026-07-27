@@ -1,4 +1,4 @@
-name: Deploy LUTr to GitHub Pages
+name: Deploy LUTr — LUTrepository to GitHub Pages
 
 on:
   push:

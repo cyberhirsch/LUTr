@@ -234,8 +234,19 @@ function writeUtf8(file, text) {
 function annotateCube(file, meta) {
   let data = fs.readFileSync(file);
   let text = data.toString("utf8");
-  if (text.includes("# LUTr-Source:")) return false;
+  if (text.includes("# LUTr-Source:")) {
+    if (!text.includes("# LUTr-Project:")) {
+      text = text.replace(
+        /^# LUTr-Collection:/m,
+        "# LUTr-Project: LUTr — LUTrepository\n# LUTr-Collection:",
+      );
+      writeUtf8(file, text);
+      return true;
+    }
+    return false;
+  }
   const header = [
+    "# LUTr-Project: LUTr — LUTrepository",
     `# LUTr-Collection: ${meta.name}`,
     `# LUTr-Source: ${meta.source}`,
     `# LUTr-License: ${meta.license}`,
@@ -267,7 +278,7 @@ function writeLutSidecar(file, meta) {
 - **Repository path:** \`${rel}\`
 - **SHA-256:** \`${sha256(file)}\`
 
-This sidecar carries searchable provenance and tags because the asset format does not have a reliably portable metadata/comment convention.
+This sidecar is part of LUTr — LUTrepository. It carries searchable provenance and tags because the asset format does not have a reliably portable metadata/comment convention.
 `;
   writeUtf8(sidecar, content);
 }
@@ -306,7 +317,7 @@ for (const asset of imageAssets) {
 - **Attribution:** ${asset.attribution}
 - **SHA-256:** \`${sha256(file)}\`
 
-This same-filename sidecar is the searchable metadata record for an image format that does not provide a dependable portable tag field. This is a provenance note, not legal advice.
+This same-filename sidecar is part of LUTr — LUTrepository and is the searchable metadata record for an image format that does not provide a dependable portable tag field. This is a provenance note, not legal advice.
 `;
   writeUtf8(`${file}.info.md`, content);
 }

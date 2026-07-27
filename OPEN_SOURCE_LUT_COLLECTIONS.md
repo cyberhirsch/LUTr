@@ -1,5 +1,7 @@
 # Open-Source LUT Collections
 
+This collection register is maintained for **LUTr — LUTrepository**.
+
 Verified on 2026-07-27. This list focuses on downloadable color-grading,
 display-transform, camera, and accessibility LUT assets—not merely software
 that can create or apply LUTs.
