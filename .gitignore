@@ -26,3 +26,13 @@ render-previews.out.log
 render-previews.err.log
 .DS_Store
 Thumbs.db
+
+# Secrets. The GitHub App private key and the server's runtime .env must
+# never reach the repository -- they are copied to the Pi directly (see
+# server/README.md) and exist here only as local deploy staging.
+server/*.pem
+server/.env
+
+# Local admin panel: has the LUTR_ADMIN_TOKEN baked in, opened via file://
+# on this machine only. Never deployed, never committed.
+server/*.local.html

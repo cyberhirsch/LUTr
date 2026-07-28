@@ -1,0 +1,53 @@
+# Deploy on the Pi as its own project, the same pattern as lensfit-server
+# and the other cloudflare-tunnel-fronted services already running there: an
+# internal-only app container plus a tunnel sidecar, nothing port-forwarded
+# on the router.
+#
+#   mkdir -p ~/lutr-server
+#   scp -r ../server ../site/lut-io.js ../site/color-spaces.js ../scripts/lib cyberhirsch@pi:~/lutr-server/
+#   cd ~/lutr-server && cp server/.env.example server/.env   # then fill in secrets
+#   docker compose -f server/docker-compose.yml up -d --build
+#
+# `name:` below is set explicitly rather than left to Compose's default
+# (the current directory's basename). Both this service and lensfit-server
+# keep their compose file inside a subdirectory literally called "server/",
+# so without an explicit name Compose treats them as the SAME project --
+# it will warn about the other one's containers as "orphans," and a
+# `docker compose down --remove-orphans` run in either directory could take
+# out the other service's containers.
+name: lutr-server
+
+services:
+  lutr-server:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    container_name: lutr-server
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # the only thing this service needs to survive a rebuild: the
+      # submission queue, ratings, download counts, and reports
+      - lutr-db:/data/db
+      # the GitHub App's private key, read-only, never baked into the image
+      - ./github-app-key.pem:/run/secrets/github-app-key.pem:ro
+    environment:
+      - GITHUB_APP_PRIVATE_KEY_PATH=/run/secrets/github-app-key.pem
+    # not published on any host port -- reachable only through the tunnel
+    expose:
+      - "8420"
+
+  lutr-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: lutr-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    # TUNNEL_TOKEN comes from .env (never hardcoded here) -- env_file loads
+    # it as a container environment variable, which `tunnel run` picks up
+    # on its own without needing --token on the command line.
+    env_file: .env
+    depends_on:
+      - lutr-server
+
+volumes:
+  lutr-db:

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { VALID_COLOR_SPACES } from "./lib/color-space-ids.mjs";
 
 const root = process.cwd();
 const submissions = path.join(root, "submissions");
@@ -11,25 +12,9 @@ const ffmpeg = process.env.FFMPEG_PATH || "ffmpeg";
 const generatedDate = new Date().toISOString().slice(0, 10);
 const retrievedDate = "2026-07-27";
 const toolVersion = "2.0.0";
-const validColorSpaces = new Set([
-  "srgb", "rec709", "rec709-gamma24", "linear-rec709", "display-p3",
-  "linear-p3", "rec2020-gamma24", "linear-rec2020", "acescg", "aces2065-1",
-  "sony-slog3-sgamut3", "sony-slog2-sgamut", "sony-slog1-sgamut",
-  "arri-logc3-ei800-awg3", "panasonic-vlog-vgamut", "panasonic-vlogl-vgamut",
-  "dji-dlog-dgamut", "bmd-film", "bmd-film-4k", "canon-cinestyle",
-  "canon-log-cinema-gamut", "canon-log2-cinema-gamut", "canon-log3-cinema-gamut",
-  "red-logfilm-rwg", "panasonic-cinelike-d", "gopro-protune-native",
-  "cie-xyz-d65", "rec709-gamma18", "rec709-gamma22", "linear-adobe-rgb",
-  "adobe-rgb-gamma22", "acescg-gamma22", "acescg-srgb", "apple-log-bt2020",
-  "arri-logc4-awg4", "linear-arri-wide-gamut3", "linear-arri-wide-gamut4",
-  "bmd-film-gen5-widegamut", "linear-bmd-widegamut",
-  "davinci-intermediate-widegamut", "linear-davinci-widegamut",
-  "linear-canon-cinema-gamut", "linear-dji-dgamut", "linear-panasonic-vgamut",
-  "red-log3g10-rwg", "linear-red-wide-gamut", "linear-sony-sgamut",
-  "linear-sony-sgamut3", "sony-slog3-sgamut3cine", "linear-sony-sgamut3cine",
-  "sony-slog3-venice-sgamut3", "linear-sony-venice-sgamut3",
-  "sony-slog3-venice-sgamut3cine", "linear-sony-venice-sgamut3cine",
-]);
+// VALID_COLOR_SPACES includes "" (unresolved/unknown); this script never
+// wants "" to normalize successfully, so it excludes it explicitly below.
+const validColorSpaces = new Set([...VALID_COLOR_SPACES].filter(Boolean));
 const offsetArg = process.argv.find((value) => value.startsWith("--offset="));
 const limitArg = process.argv.find((value) => value.startsWith("--limit="));
 const sourceOffset = Math.max(0, Number(offsetArg?.split("=")[1] || 0));

@@ -2,6 +2,14 @@ import { LutRenderer } from "./lut-renderer.js";
 import { colorSpace, colorSpaceLabel, colorSpaceOptions } from "./color-spaces.js";
 import { composeCube, downloadText, fetchCubeText, parseCube } from "./lut-io.js";
 import { decodeImageFile } from "./image-loader.js";
+import {
+  beaconDownload, communityStatusUrl, getDownloadCount, getRatings,
+  getSubmissionStatus, rateLut, reportLut, submitLut,
+} from "./community-api.js";
+import {
+  SUBMISSION_COLOR_SPACES, SUBMISSION_CONFIDENCE,
+  SUBMISSION_LICENSE_BASIS, SUBMISSION_TRANSFORM_CLASSES,
+} from "./community-vocabularies.js";
 
 const state = {
   catalog: null,
@@ -17,6 +25,9 @@ const state = {
   lutInputOverrides: new Map(),
   lutOutputOverrides: new Map(),
   uploadedLut: null,
+  communityMetrics: new Map(),
+  communityMetricsPending: new Set(),
+  submissionCube: null,
 };
 
 let lutRenderer = null;
@@ -41,10 +52,17 @@ const els = Object.fromEntries([
   "compareTray","compareCount","compareNames","clearCompare","openCompare","compareDialog",
   "compareClose","compareGrid","uploadImageButton","imageUpload","imageColorSpace","imageColorSpaceHint","viewerCanvas","viewerOriginalCanvas",
   "viewerLutInputSpace","viewerLutOutputSpace","viewerDownloadInput","viewerDownloadOutput","downloadConvertedLut",
+  "viewerCommunityStats","viewerRating","viewerRatingButtons","viewerRatingStatus",
+  "reportFromViewer","reportForm","reportCategory","reportDetail","reportSubmit","reportCancel","reportStatus",
   "fullPreviewDialog","fullPreviewClose","fullPreviewFallback","fullPreviewCanvas","fullPreviewCollection",
   "fullPreviewTitle","fullPreviewReference","fullPreviewStatus",
   "converterFile","converterLutInput","converterLutOutput",
   "converterNewInput","converterNewOutput","converterSize","converterStatus","converterDownload",
+  "submissionForm","submissionFile","submissionPreflight","submissionTitleField","submissionAuthor",
+  "submissionLicense","submissionLicenseBasis","submissionTransformClass","submissionConfidence",
+  "submissionInputColorSpace","submissionOutputColorSpace","submissionAuthorUrl","submissionLicenseUrl",
+  "submissionSource","submissionAssetUrl","submissionTags","submissionAttestation","submissionSubmit",
+  "submissionStatus","submissionHistory","submissionHistoryList",
 ].map((id) => [id, document.getElementById(id)]));
 
 const label = (value) => value
@@ -284,6 +302,40 @@ function metricTag(lut) {
   return lut.intensity < .06 ? "Subtle" : lut.intensity < .15 ? "Moderate" : "Strong";
 }
 
+function communityMetricText(metrics) {
+  if (!metrics) return "";
+  const parts = [];
+  if (metrics.rating?.count) parts.push(`★ ${Number(metrics.rating.average || 0).toFixed(1)} (${metrics.rating.count})`);
+  if (Number.isFinite(metrics.downloads?.count)) parts.push(`↓ ${metrics.downloads.count.toLocaleString()}`);
+  return parts.join(" · ");
+}
+
+function paintCommunityMetrics(lutId) {
+  const metrics = state.communityMetrics.get(lutId);
+  const text = communityMetricText(metrics);
+  document.querySelectorAll(`[data-community-stats="${CSS.escape(lutId)}"]`)
+    .forEach((node) => { node.textContent = text; });
+  if (state.activeLut?.id === lutId) {
+    els.viewerCommunityStats.textContent = text || "No community ratings or downloads yet.";
+  }
+}
+
+async function loadCommunityMetrics(lut) {
+  if (!lut || state.communityMetrics.has(lut.id) || state.communityMetricsPending.has(lut.id)) return;
+  state.communityMetricsPending.add(lut.id);
+  const [rating, downloads] = await Promise.allSettled([
+    getRatings(lut.id),
+    getDownloadCount(lut.id),
+  ]);
+  state.communityMetricsPending.delete(lut.id);
+  if (rating.status !== "fulfilled" && downloads.status !== "fulfilled") return;
+  state.communityMetrics.set(lut.id, {
+    rating: rating.status === "fulfilled" ? rating.value : null,
+    downloads: downloads.status === "fulfilled" ? downloads.value : null,
+  });
+  paintCommunityMetrics(lut.id);
+}
+
 function card(lut) {
   const image = selectedImage();
   const pipeline = lutPipeline(lut, image);
@@ -299,6 +351,7 @@ function card(lut) {
     <div class="lut-card-body">
       <div class="lut-card-kicker">${lut.collection} · ${lut.format}</div>
       <h3 title="${lut.title}">${lut.title}</h3>
+      <div class="card-community-stats" data-community-stats="${lut.id}">${escapeHtml(communityMetricText(state.communityMetrics.get(lut.id)))}</div>
       <div class="tag-row">${tags.map((tag) => `<span>${label(tag)}</span>`).join("")}</div>
       <div class="lut-card-actions">
         <button data-open="${lut.id}">Details ↗</button>
@@ -320,6 +373,7 @@ function renderCatalog() {
   els.lutGrid.querySelectorAll("[data-full-preview]").forEach((button) => button.addEventListener("click", () => openFullPreview(button.dataset.fullPreview)));
   els.lutGrid.querySelectorAll("[data-open]").forEach((button) => button.addEventListener("click", () => openViewer(button.dataset.open)));
   els.lutGrid.querySelectorAll("[data-compare]").forEach((button) => button.addEventListener("click", () => toggleCompare(button.dataset.compare)));
+  visible.forEach((lut) => loadCommunityMetrics(lut));
   if (lutRenderer) renderClientThumbnails(visible, generation);
 }
 
@@ -439,6 +493,63 @@ async function renderViewerLut(lut, image) {
   }
 }
 
+function resetViewerCommunity(lut) {
+  els.viewerCommunityStats.textContent = communityMetricText(state.communityMetrics.get(lut.id)) || "Loading community activity…";
+  els.viewerRatingStatus.textContent = "";
+  els.viewerRatingButtons.querySelectorAll("[data-rating]").forEach((button) => {
+    button.disabled = false;
+    button.textContent = "☆";
+  });
+  els.reportForm.hidden = true;
+  els.reportCategory.value = "technical";
+  els.reportDetail.value = "";
+  els.reportStatus.textContent = "";
+  els.reportSubmit.disabled = false;
+  els.reportForm.querySelectorAll("label, div").forEach((node) => { node.hidden = false; });
+  els.reportFromViewer.hidden = false;
+}
+
+async function submitViewerRating(stars) {
+  const lut = state.activeLut;
+  if (!lut) return;
+  const buttons = [...els.viewerRatingButtons.querySelectorAll("[data-rating]")];
+  buttons.forEach((button) => { button.disabled = true; });
+  els.viewerRatingStatus.textContent = "Saving your rating…";
+  try {
+    const rating = await rateLut(lut.id, stars);
+    if (state.activeLut?.id !== lut.id) return;
+    const current = state.communityMetrics.get(lut.id) || {};
+    state.communityMetrics.set(lut.id, { ...current, rating });
+    buttons.forEach((button) => { button.textContent = Number(button.dataset.rating) <= stars ? "★" : "☆"; });
+    els.viewerRatingStatus.textContent = `Saved · ${Number(rating.average || 0).toFixed(1)} from ${rating.count} rating${rating.count === 1 ? "" : "s"}.`;
+    paintCommunityMetrics(lut.id);
+  } catch (error) {
+    if (state.activeLut?.id === lut.id) els.viewerRatingStatus.textContent = error.message;
+  } finally {
+    if (state.activeLut?.id === lut.id) buttons.forEach((button) => { button.disabled = false; });
+  }
+}
+
+async function submitViewerReport(event) {
+  event.preventDefault();
+  const lut = state.activeLut;
+  if (!lut) return;
+  els.reportSubmit.disabled = true;
+  els.reportStatus.textContent = "Sending…";
+  try {
+    await reportLut(lut.id, els.reportCategory.value, els.reportDetail.value);
+    if (state.activeLut?.id !== lut.id) return;
+    els.reportForm.querySelectorAll("label, div").forEach((node) => { node.hidden = true; });
+    els.reportStatus.textContent = "Thanks, this has been flagged for review.";
+    els.reportFromViewer.hidden = true;
+  } catch (error) {
+    if (state.activeLut?.id === lut.id) {
+      els.reportStatus.textContent = error.message;
+      els.reportSubmit.disabled = false;
+    }
+  }
+}
+
 async function openViewer(id) {
   const lut = state.catalog.luts.find((item) => item.id === id);
   if (!lut) return;
@@ -476,8 +587,10 @@ async function openViewer(id) {
     .join("");
   els.viewerSource.href = lut.assetUrl || lut.source;
   els.compareFromViewer.textContent = state.compare.includes(lut.id) ? "Remove from compare" : "Add to compare";
+  resetViewerCommunity(lut);
   configureViewerColorTools(lut, image);
   els.viewerDialog.showModal();
+  loadCommunityMetrics(lut);
   if (lutRenderer && image.colorSpace !== "srgb") {
     try {
       await lutRenderer.renderIdentity(
@@ -578,11 +691,158 @@ async function downloadCatalogLut() {
     });
     const filename = `${lut.id.replace(/--[a-f0-9]{9}$/, "")}--${els.viewerDownloadInput.value}-to-${els.viewerDownloadOutput.value}.cube`;
     downloadText(filename, cube);
+    beaconDownload(lut.id).then(() => {
+      state.communityMetrics.delete(lut.id);
+      loadCommunityMetrics(lut);
+    }).catch(() => {});
   } catch (error) {
     els.viewerNotice.textContent = `Converted LUT download failed: ${error.message}`;
   } finally {
     els.downloadConvertedLut.textContent = "Download converted .cube";
     updateViewerDownloadState();
+  }
+}
+
+const SUBMISSION_STORAGE_KEY = "lutr-community-submissions";
+const MAX_SUBMISSION_BYTES = 16 * 1024 * 1024;
+
+function optionMarkup(values, placeholder = "Choose…") {
+  return `<option value="">${placeholder}</option>${values.filter(Boolean).map((value) =>
+    `<option value="${escapeHtml(value)}">${escapeHtml(label(value))}</option>`
+  ).join("")}`;
+}
+
+function submissionColorSpaceOptions() {
+  return SUBMISSION_COLOR_SPACES.map((id) => {
+    const text = id ? (colorSpace(id) ? colorSpaceLabel(id) : label(id)) : "Choose a color space…";
+    return `<option value="${escapeHtml(id)}">${escapeHtml(text)}</option>`;
+  }).join("");
+}
+
+function checkSubmissionReady() {
+  els.submissionSubmit.disabled = !(state.submissionCube && els.submissionForm.checkValidity());
+}
+
+async function loadSubmissionFile(file) {
+  state.submissionCube = null;
+  els.submissionPreflight.dataset.state = "";
+  els.submissionPreflight.textContent = "Choose a normalized 3D CUBE up to 16 MB.";
+  if (!file) {
+    checkSubmissionReady();
+    return;
+  }
+  if (file.size > MAX_SUBMISSION_BYTES) {
+    els.submissionPreflight.dataset.state = "error";
+    els.submissionPreflight.textContent = "The CUBE exceeds the 16 MB submission limit.";
+    checkSubmissionReady();
+    return;
+  }
+  try {
+    const text = await file.text();
+    const parsed = parseCube(text, file.name);
+    if (parsed.kind !== "3D") throw new Error("Only 3D CUBE LUTs are accepted; 1D LUTs are not supported.");
+    if (parsed.size < 2 || parsed.size > 129) throw new Error(`LUT_3D_SIZE ${parsed.size} is outside the supported range 2–129.`);
+    if (parsed.domainMin.some((value) => value !== 0) || parsed.domainMax.some((value) => value !== 1)) {
+      throw new Error("DOMAIN_MIN/DOMAIN_MAX must be 0 0 0 / 1 1 1 — normalize before submitting.");
+    }
+    state.submissionCube = { text, parsed, filename: file.name };
+    if (!els.submissionTitleField.value && parsed.title) els.submissionTitleField.value = parsed.title;
+    els.submissionPreflight.dataset.state = "ready";
+    els.submissionPreflight.textContent = `${parsed.title || file.name} · ${parsed.size}³ · ${parsed.values.length.toLocaleString()} entries · ready for metadata review.`;
+  } catch (error) {
+    els.submissionPreflight.dataset.state = "error";
+    els.submissionPreflight.textContent = error.message;
+  }
+  checkSubmissionReady();
+}
+
+function storedSubmissions() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SUBMISSION_STORAGE_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.slice(0, 10) : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberSubmission(id, title) {
+  const entries = [{ id, title, savedAt: new Date().toISOString() }, ...storedSubmissions().filter((item) => item.id !== id)].slice(0, 10);
+  try { localStorage.setItem(SUBMISSION_STORAGE_KEY, JSON.stringify(entries)); } catch {}
+}
+
+function submissionStatusDescription(result) {
+  if (!result) return "Status unavailable";
+  if (result.status === "approved" && result.lutId) return `Approved as ${result.lutId}`;
+  if (result.status === "rejected") return `Rejected${result.rejectReason ? `: ${result.rejectReason}` : ""}`;
+  if (result.status === "quarantined") return "Quarantined for manual rights review";
+  if (result.status === "pending") return "Awaiting review";
+  return label(result.status || "unknown");
+}
+
+async function refreshStoredSubmissions() {
+  const entries = storedSubmissions();
+  els.submissionHistory.hidden = !entries.length;
+  if (!entries.length) return;
+  const results = await Promise.allSettled(entries.map((entry) => getSubmissionStatus(entry.id)));
+  els.submissionHistoryList.innerHTML = entries.map((entry, index) => {
+    const result = results[index].status === "fulfilled" ? results[index].value : null;
+    const approvedLink = result?.lutId
+      ? `<a href="./?q=${encodeURIComponent(result.lutId)}#catalog">${escapeHtml(result.lutId)}</a>`
+      : `<a href="${communityStatusUrl(entry.id)}">${escapeHtml(entry.id)}</a>`;
+    return `<article><strong>${escapeHtml(entry.title || entry.id)}</strong><span>${escapeHtml(submissionStatusDescription(result))}</span>${approvedLink}</article>`;
+  }).join("");
+}
+
+function submissionMeta() {
+  return {
+    title: els.submissionTitleField.value.trim(),
+    author: els.submissionAuthor.value.trim(),
+    license: els.submissionLicense.value.trim(),
+    licenseBasis: els.submissionLicenseBasis.value,
+    transformClass: els.submissionTransformClass.value,
+    inputColorSpace: els.submissionInputColorSpace.value,
+    outputColorSpace: els.submissionOutputColorSpace.value,
+    colorSpaceConfidence: els.submissionConfidence.value,
+    authorUrl: els.submissionAuthorUrl.value.trim(),
+    licenseUrl: els.submissionLicenseUrl.value.trim(),
+    source: els.submissionSource.value.trim(),
+    assetUrl: els.submissionAssetUrl.value.trim(),
+    tags: els.submissionTags.value.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 20),
+  };
+}
+
+async function handleSubmission(event) {
+  event.preventDefault();
+  if (!state.submissionCube || !els.submissionForm.reportValidity()) return;
+  els.submissionSubmit.disabled = true;
+  els.submissionSubmit.textContent = "Submitting…";
+  els.submissionStatus.dataset.state = "";
+  els.submissionStatus.textContent = "Uploading the CUBE and metadata for independent validation…";
+  const meta = submissionMeta();
+  try {
+    const result = await submitLut({ cube: state.submissionCube.text, meta });
+    rememberSubmission(result.id, meta.title);
+    const note = result.status === "quarantined" ? result.note : "Submitted for review.";
+    els.submissionStatus.innerHTML = `${escapeHtml(note)} Submission ID: <a href="${communityStatusUrl(result.id)}">${escapeHtml(result.id)}</a>`;
+    refreshStoredSubmissions();
+  } catch (error) {
+    els.submissionStatus.dataset.state = "error";
+    if (error.status === 409 && error.body?.existingLutId) {
+      const id = error.body.existingLutId;
+      els.submissionStatus.innerHTML = `This numerical transform is already in the catalog: <a href="./?q=${encodeURIComponent(id)}#catalog">${escapeHtml(id)}</a>`;
+    } else if (error.status === 409 && error.body?.submissionId) {
+      const id = error.body.submissionId;
+      rememberSubmission(id, meta.title);
+      els.submissionStatus.innerHTML = `This numerical transform is already awaiting review: <a href="${communityStatusUrl(id)}">${escapeHtml(id)}</a>`;
+      refreshStoredSubmissions();
+    } else if (error.status === 413) {
+      els.submissionStatus.textContent = "The request is too large. Community submissions are limited to a 16 MB CUBE.";
+    } else {
+      els.submissionStatus.textContent = error.message;
+    }
+  } finally {
+    els.submissionSubmit.textContent = "Submit for review";
+    checkSubmissionReady();
   }
 }
 
@@ -749,6 +1009,15 @@ function bindEvents() {
   els.viewerDownloadOutput.addEventListener("change", updateViewerDownloadState);
   els.downloadConvertedLut.addEventListener("click", downloadCatalogLut);
   els.compareFromViewer.addEventListener("click", () => state.activeLut && toggleCompare(state.activeLut.id));
+  els.viewerRatingButtons.querySelectorAll("[data-rating]").forEach((button) => {
+    button.addEventListener("click", () => submitViewerRating(Number(button.dataset.rating)));
+  });
+  els.reportFromViewer.addEventListener("click", () => {
+    els.reportForm.hidden = !els.reportForm.hidden;
+    if (!els.reportForm.hidden) els.reportCategory.focus();
+  });
+  els.reportCancel.addEventListener("click", () => { els.reportForm.hidden = true; });
+  els.reportForm.addEventListener("submit", submitViewerReport);
   els.clearCompare.addEventListener("click", () => { state.compare = []; renderCompareTray(); renderCatalog(); });
   els.openCompare.addEventListener("click", openCompareDialog);
   els.compareClose.addEventListener("click", () => els.compareDialog.close());
@@ -758,6 +1027,10 @@ function bindEvents() {
     select.addEventListener("change", updateConverterState);
   }
   els.converterDownload.addEventListener("click", downloadUploadedConversion);
+  els.submissionFile.addEventListener("change", () => loadSubmissionFile(els.submissionFile.files?.[0]));
+  els.submissionForm.addEventListener("input", checkSubmissionReady);
+  els.submissionForm.addEventListener("change", checkSubmissionReady);
+  els.submissionForm.addEventListener("submit", handleSubmission);
 }
 
 async function init() {
@@ -770,6 +1043,11 @@ async function init() {
   for (const select of [
     els.converterLutInput, els.converterLutOutput, els.converterNewInput, els.converterNewOutput,
   ]) select.innerHTML = spaceOptions;
+  els.submissionInputColorSpace.innerHTML = submissionColorSpaceOptions();
+  els.submissionOutputColorSpace.innerHTML = submissionColorSpaceOptions();
+  els.submissionTransformClass.innerHTML = optionMarkup(SUBMISSION_TRANSFORM_CLASSES, "Choose a transform class…");
+  els.submissionConfidence.innerHTML = optionMarkup(SUBMISSION_CONFIDENCE, "Choose a confidence level…");
+  els.submissionLicenseBasis.innerHTML = optionMarkup(SUBMISSION_LICENSE_BASIS, "Choose a license basis…");
   for (const image of state.catalog.images) {
     image.colorSpaceConfidence ||= "declared";
     image.colorSpaceReason ||= `Catalog metadata declares ${colorSpaceLabel(image.colorSpace)}. Change this if the reference was encoded differently.`;
@@ -791,6 +1069,8 @@ async function init() {
   renderAllFilterDependent();
   renderCompareTray();
   bindEvents();
+  checkSubmissionReady();
+  refreshStoredSubmissions();
 }
 
 init().catch((error) => {

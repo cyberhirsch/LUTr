@@ -19,6 +19,7 @@
         <a href="#images">Images</a>
         <a href="#catalog">Catalog</a>
         <a href="#convert">Convert</a>
+        <a href="#submit">Submit</a>
         <a href="#method">Method</a>
       </nav>
       <a class="github-link" href="https://github.com/cyberhirsch/LUTr">GitHub ↗</a>
@@ -164,8 +165,75 @@
         </div>
       </section>
 
+      <section class="submission-section" id="submit" aria-labelledby="submissionTitle">
+        <div class="converter-intro">
+          <p class="eyebrow">04 / Community</p>
+          <h2 id="submissionTitle">Submit a LUT</h2>
+          <p>Contribute a license-cleared 3D CUBE to LUTrepository. The browser checks its grid and domain first; the community server independently validates the file, metadata, license declaration, and duplicates before review.</p>
+          <div class="submission-history" id="submissionHistory" hidden>
+            <strong>Your recent submissions</strong>
+            <div id="submissionHistoryList"></div>
+          </div>
+        </div>
+        <form class="submission-workbench" id="submissionForm">
+          <label class="file-drop">3D CUBE file
+            <input id="submissionFile" type="file" accept=".cube,text/plain" required />
+          </label>
+          <p class="submission-preflight" id="submissionPreflight">Choose a normalized 3D CUBE up to 16 MB.</p>
+          <div class="submission-grid">
+            <label>Title
+              <input id="submissionTitleField" name="title" maxlength="120" required />
+            </label>
+            <label>Author
+              <input id="submissionAuthor" name="author" maxlength="200" required />
+            </label>
+            <label>License
+              <input id="submissionLicense" name="license" maxlength="60" placeholder="CC0-1.0, MIT, CC-BY-4.0…" required />
+            </label>
+            <label>License basis
+              <select id="submissionLicenseBasis" name="licenseBasis" required></select>
+            </label>
+            <label>Transform class
+              <select id="submissionTransformClass" name="transformClass" required></select>
+            </label>
+            <label>Metadata confidence
+              <select id="submissionConfidence" name="colorSpaceConfidence" required></select>
+            </label>
+            <label>Input color space
+              <select id="submissionInputColorSpace" name="inputColorSpace" required></select>
+            </label>
+            <label>Output color space
+              <select id="submissionOutputColorSpace" name="outputColorSpace" required></select>
+            </label>
+            <label>Author URL <span>optional</span>
+              <input id="submissionAuthorUrl" name="authorUrl" type="url" />
+            </label>
+            <label>License URL <span>optional</span>
+              <input id="submissionLicenseUrl" name="licenseUrl" type="url" />
+            </label>
+            <label>Source page <span>optional</span>
+              <input id="submissionSource" name="source" type="url" />
+            </label>
+            <label>Direct asset URL <span>optional</span>
+              <input id="submissionAssetUrl" name="assetUrl" type="url" />
+            </label>
+            <label class="submission-wide">Tags <span>optional, comma separated</span>
+              <input id="submissionTags" name="tags" placeholder="cinematic, warm, skin" />
+            </label>
+          </div>
+          <label class="submission-attestation">
+            <input id="submissionAttestation" type="checkbox" required />
+            <span>I confirm that the declared license permits redistribution of this LUT and that the attribution and source details are accurate.</span>
+          </label>
+          <div class="submission-submit-row">
+            <button class="primary-button" id="submissionSubmit" type="submit" disabled>Submit for review</button>
+            <p id="submissionStatus" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </section>
+
       <section class="method-section" id="method">
-        <p class="eyebrow">04 / Method</p>
+        <p class="eyebrow">05 / Method</p>
         <div class="method-grid">
           <h2>Honest previews,<br />not magic thumbnails.</h2>
           <div>
@@ -205,6 +273,18 @@
         <h2 id="viewerTitle"></h2>
         <div class="viewer-badges" id="viewerBadges"></div>
         <p id="viewerNotice"></p>
+        <div class="community-summary" id="viewerCommunityStats" aria-live="polite"></div>
+        <div class="rating-widget" id="viewerRating" aria-label="Rate this LUT">
+          <span>Your rating</span>
+          <div id="viewerRatingButtons">
+            <button type="button" data-rating="1" aria-label="Rate 1 star">☆</button>
+            <button type="button" data-rating="2" aria-label="Rate 2 stars">☆</button>
+            <button type="button" data-rating="3" aria-label="Rate 3 stars">☆</button>
+            <button type="button" data-rating="4" aria-label="Rate 4 stars">☆</button>
+            <button type="button" data-rating="5" aria-label="Rate 5 stars">☆</button>
+          </div>
+          <small id="viewerRatingStatus"></small>
+        </div>
         <dl id="viewerMetadata"></dl>
         <div class="viewer-color-tools">
           <label>LUT expects
@@ -227,8 +307,26 @@
         </div>
         <div class="viewer-actions">
           <button class="primary-button" id="compareFromViewer">Add to compare</button>
+          <button class="text-button" id="reportFromViewer" type="button">Report</button>
           <a class="text-button" id="viewerSource" href="#">Open source ↗</a>
         </div>
+        <form class="report-form" id="reportForm" hidden>
+          <label>Reason
+            <select id="reportCategory">
+              <option value="technical">Technical problem</option>
+              <option value="copyright">Copyright or license</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label>Details
+            <textarea id="reportDetail" maxlength="4000" rows="3" placeholder="Briefly describe the issue"></textarea>
+          </label>
+          <div>
+            <button class="primary-button" id="reportSubmit" type="submit">Send report</button>
+            <button class="quiet-button" id="reportCancel" type="button">Cancel</button>
+          </div>
+          <p id="reportStatus" role="status"></p>
+        </form>
       </div>
     </dialog>
 
