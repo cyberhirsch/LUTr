@@ -163,17 +163,6 @@ const imageAssets = [
     attribution: "Netflix, “Sparks” open content.",
   },
   {
-    file: "Images/Meridian/Meridian_UHD4k5994p_HDR_P3PQ_21000.tif",
-    title: "Netflix Meridian — P3/PQ frame 21000",
-    purpose: "Cinematic skin, production lighting, wardrobe, and HDR display-transform evaluation.",
-    tags: ["hdr", "netflix", "meridian", "skin-tone", "production-lighting", "p3", "pq", "tiff"],
-    source: "https://s3.amazonaws.com/download.opencontent.netflix.com/Meridian/tiffs/Meridian_UHD4k5994p_HDR_P3PQ_21000.tif",
-    license: "CC-BY-4.0.",
-    commercial: "Permitted with attribution and the CC BY 4.0 license notice.",
-    color: "Display-referred P3 primaries with PQ transfer, as encoded in the source filename.",
-    attribution: "Netflix, “Meridian” open content.",
-  },
-  {
     file: "Images/Tears of Steel/10081.png",
     title: "Tears of Steel — final-film frame 10081",
     purpose: "Live-action face, cinematic lighting, composited display graphics, and VFX.",

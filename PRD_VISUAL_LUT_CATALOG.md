@@ -208,7 +208,6 @@ The MVP uses the existing curated references:
 - OpenEXR MtTamWest
 - OpenEXR Desk
 - Netflix Sparks frame
-- Netflix Meridian frame
 - Tears of Steel frame
 - Poly Haven daylight HDRI
 - Poly Haven artificial-light HDRI

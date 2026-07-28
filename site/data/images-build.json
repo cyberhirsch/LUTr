@@ -163,23 +163,5 @@
     ],
     "encoding": "Scene-linear ACES",
     "proxyMode": "linear"
-  },
-  {
-    "id": "meridian",
-    "title": "Meridian",
-    "subtitle": "Cinematic skin · production lighting",
-    "sourceFile": "Images/Meridian/Meridian_UHD4k5994p_HDR_P3PQ_21000.tif",
-    "sourceUrl": "https://s3.amazonaws.com/download.opencontent.netflix.com/Meridian/tiffs/Meridian_UHD4k5994p_HDR_P3PQ_21000.tif",
-    "license": "CC-BY-4.0",
-    "tags": [
-      "hdr",
-      "skin",
-      "production-lighting",
-      "p3",
-      "pq",
-      "netflix"
-    ],
-    "encoding": "Display-referred P3/PQ",
-    "proxyMode": "display"
   }
 ]

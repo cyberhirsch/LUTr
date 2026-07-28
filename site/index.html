@@ -18,6 +18,7 @@
       <nav aria-label="Primary navigation">
         <a href="#images">Images</a>
         <a href="#catalog">Catalog</a>
+        <a href="#convert">Convert</a>
         <a href="#method">Method</a>
       </nav>
       <a class="github-link" href="https://github.com/cyberhirsch/LUTr">GitHub ↗</a>
@@ -47,7 +48,7 @@
           <div class="reference-actions">
             <p>Skin, charts, interiors, landscapes, reflections, and controlled light.</p>
             <button class="primary-button" id="uploadImageButton">Upload your image</button>
-            <input id="imageUpload" type="file" hidden />
+            <input id="imageUpload" type="file" multiple hidden />
           </div>
         </div>
         <div class="image-rail" id="imageRail" role="list"></div>
@@ -127,14 +128,52 @@
         </div>
       </section>
 
+      <section class="converter-section" id="convert" aria-labelledby="converterTitle">
+        <div class="converter-intro">
+          <p class="eyebrow">03 / Local utility</p>
+          <h2 id="converterTitle">Convert a LUT</h2>
+          <p>Upload a 1D or 3D CUBE, declare its existing color path, then bake a new input and output path into a downloadable 3D CUBE. Parsing, composition, and download stay in your browser.</p>
+        </div>
+        <div class="converter-workbench">
+          <label class="file-drop">CUBE file
+            <input id="converterFile" type="file" accept=".cube,text/plain" />
+          </label>
+          <div class="converter-grid">
+            <label>Uploaded LUT expects
+              <select id="converterLutInput"></select>
+            </label>
+            <label>Uploaded LUT outputs
+              <select id="converterLutOutput"></select>
+            </label>
+            <label>New LUT input
+              <select id="converterNewInput"></select>
+            </label>
+            <label>New LUT output
+              <select id="converterNewOutput"></select>
+            </label>
+            <label>Grid size
+              <select id="converterSize">
+                <option value="17">17³</option>
+                <option value="33" selected>33³</option>
+                <option value="65">65³</option>
+              </select>
+            </label>
+          </div>
+          <p class="converter-status" id="converterStatus">Choose a 1D or 3D CUBE file to begin.</p>
+          <button class="primary-button" id="converterDownload" disabled>Convert and download</button>
+        </div>
+      </section>
+
       <section class="method-section" id="method">
-        <p class="eyebrow">03 / Method</p>
+        <p class="eyebrow">04 / Method</p>
         <div class="method-grid">
           <h2>Honest previews,<br />not magic thumbnails.</h2>
           <div>
               <p>Every hosted transform is a metadata-rich CUBE. LUTr parses its floating-point samples locally and applies them with WebGL; uploaded images stay in the browser and are never sent to a server.</p>
-              <p>Every reference image has an explicit pixel encoding. LUTr converts that encoding to the selected LUT's input, applies the LUT, then converts its output to the display. Results remain illustrative until each transform has verified input and output metadata.</p>
+              <p>You can upload several reference images in one selection. LUTr decodes and color-tags each image locally; the selected reference controls every catalog tile. In the full-frame viewer, Up and Down move between references while Left and Right move through the currently filtered LUT results.</p>
+              <p>Every reference image has an explicit pixel encoding. LUTr converts that encoding to the selected LUT's input, applies the LUT, then converts its output to the display. Results remain illustrative until each transform has verified input and output metadata. Final-graded references are identified as display-referred material and are not treated as neutral camera originals.</p>
               <p>Catalog downloads are composed directly from the canonical CUBE rather than an 8-bit preview image. Original CUBEs keep their native sample grids; converted sources declare their sampling method and limitations in the header.</p>
+              <p>The converter is also entirely local: LUTr parses the uploaded CUBE, composes the requested input and output conversions, resamples the chosen grid, and downloads the result without sending the LUT to a server.</p>
             <a href="https://github.com/cyberhirsch/LUTr/blob/main/PRD_VISUAL_LUT_CATALOG.md">Read the complete methodology ↗</a>
           </div>
         </div>
@@ -193,6 +232,27 @@
       </div>
     </dialog>
 
+    <dialog class="full-preview" id="fullPreviewDialog" aria-labelledby="fullPreviewTitle">
+      <button class="viewer-close full-preview-close" id="fullPreviewClose" aria-label="Close full-frame preview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
+      <div class="full-preview-stage">
+        <img id="fullPreviewFallback" alt="" />
+        <canvas id="fullPreviewCanvas" hidden></canvas>
+      </div>
+      <div class="full-preview-hud">
+        <div>
+          <p class="eyebrow" id="fullPreviewCollection"></p>
+          <h2 id="fullPreviewTitle"></h2>
+          <p id="fullPreviewReference"></p>
+        </div>
+        <p class="full-preview-status" id="fullPreviewStatus"></p>
+      </div>
+      <div class="full-preview-nav" aria-hidden="true">
+        <span>← → LUT</span>
+        <span>↑ ↓ reference</span>
+        <span>Esc close</span>
+      </div>
+    </dialog>
+
     <div class="compare-tray" id="compareTray" hidden>
       <div><strong><span id="compareCount">0</span>/4 selected</strong><span id="compareNames"></span></div>
       <button class="quiet-button" id="clearCompare">Clear</button>
@@ -203,41 +263,6 @@
       <div class="compare-header"><div><p class="eyebrow">Synchronized view</p><h2>Compare transforms</h2></div><button class="viewer-close" id="compareClose" aria-label="Close comparison"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg></button></div>
       <div class="compare-grid" id="compareGrid"></div>
     </dialog>
-
-    <button class="converter-tab" id="converterTab" aria-controls="converterPanel" aria-expanded="false">Convert LUT</button>
-    <aside class="converter-panel" id="converterPanel" aria-labelledby="converterTitle" hidden>
-      <div class="converter-header">
-        <div><p class="eyebrow">Local utility</p><h2 id="converterTitle">Convert a LUT</h2></div>
-        <button class="viewer-close" id="converterClose" aria-label="Close LUT converter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
-      </div>
-      <p>Upload a 1D or 3D CUBE, declare its existing color path, then bake a new input and output path into a downloadable 3D CUBE. Files stay in your browser.</p>
-      <label class="file-drop">CUBE file
-        <input id="converterFile" type="file" accept=".cube,text/plain" />
-      </label>
-      <div class="converter-grid">
-        <label>Uploaded LUT expects
-          <select id="converterLutInput"></select>
-        </label>
-        <label>Uploaded LUT outputs
-          <select id="converterLutOutput"></select>
-        </label>
-        <label>New LUT input
-          <select id="converterNewInput"></select>
-        </label>
-        <label>New LUT output
-          <select id="converterNewOutput"></select>
-        </label>
-        <label>Grid size
-          <select id="converterSize">
-            <option value="17">17³</option>
-            <option value="33" selected>33³</option>
-            <option value="65">65³</option>
-          </select>
-        </label>
-      </div>
-      <p class="converter-status" id="converterStatus">Choose a 1D or 3D CUBE file to begin.</p>
-      <button class="primary-button" id="converterDownload" disabled>Convert and download</button>
-    </aside>
 
     <script type="module" src="./app.js"></script>
   </body>

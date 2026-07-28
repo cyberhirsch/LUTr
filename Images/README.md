@@ -17,7 +17,6 @@ license terms, color/encoding notes, attribution, and a SHA-256 checksum.
 | `OpenEXR MtTamWest` | `MtTamWest.exr` | Landscape and sky | BSD-3-Clause |
 | `OpenEXR Desk` | `Desk.exr` | Indoor mixed colors | BSD-3-Clause |
 | `Sparks` | Netflix ACES frame 02000 | Real HDR footage and highlights | CC-BY-4.0 |
-| `Meridian` | Netflix P3/PQ frame 21000 | Cinematic skin and production lighting | CC-BY-4.0 |
 | `Tears of Steel` | Final-film frame 10081 | Live-action face and VFX | CC-BY-3.0 |
 | `Poly Haven HDRIs` | Kloofendal daylight + Studio Small artificial light | Daylight and artificial image-based illumination | CC0-1.0 |
 
