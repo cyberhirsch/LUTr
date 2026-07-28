@@ -12,14 +12,14 @@
 # LUTr-License-URL: https://github.com/videovillage/RED-Conversion-LUTs/blob/master/LICENSE.md
 # LUTr-License-Basis: repo-license-file
 # LUTr-Transform-Class: camera-transform
-# LUTr-Tags: technical, camera, red, redlogfilm, redgamma, cube
+# LUTr-Tags: technical, camera, red, redlogfilm, redgamma, redgamma3, curve-only, reverse-engineered, cube
 # LUTr-Input-Color-Space:
 # LUTr-Input-Gamut: unspecified
-# LUTr-Input-Transfer: unspecified
+# LUTr-Input-Transfer: red-logfilm
 # LUTr-Output-Color-Space:
-# LUTr-Output-Gamut: unspecified
-# LUTr-Output-Transfer: unspecified
-# LUTr-Color-Space-Confidence: unverified
+# LUTr-Output-Gamut: unchanged-unspecified
+# LUTr-Output-Transfer: redgamma3
+# LUTr-Color-Space-Confidence: declared-by-source
 # LUTr-Domain-Normalized: true
 # LUTr-Shaper: none
 # LUTr-Original-Grid: 1024
@@ -28,7 +28,8 @@
 # LUTr-Conversion-Method: Source 1D CUBE sampled to browser-compatible 33x33x33 3D CUBE
 # LUTr-Conversion-Tool: LUTr scripts/convert-all-to-cube.mjs 2.0.0
 # LUTr-Conversion-Date: 2026-07-27
-# LUTr-Conversion-Warning: A 1024-sample 1D CUBE was sampled to 33x33x33 for browser-compatible 3D CUBE hosting.
+# LUTr-Source-Labels: input=REDlogFilm post-debayered footage; output=REDgamma3 viewing curve; normalized mean absolute error=0.0177164
+# LUTr-Conversion-Warning: This reverse-engineered 1D curve does not declare RGB primaries; gamut is unchanged but unspecified. A 1024-sample 1D CUBE was sampled to 33x33x33 for browser-compatible 3D CUBE hosting.
 # LUTr-Note: Preserve this metadata and the upstream license notices when redistributing.
 # LUTr-Upstream-Comment: Created by Tashi Trieu and Greg Cotten
 

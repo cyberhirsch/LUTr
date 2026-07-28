@@ -28,6 +28,8 @@
 # LUTr-Conversion-Method: Metadata normalization; numeric LUT samples preserved
 # LUTr-Conversion-Tool: LUTr scripts/convert-all-to-cube.mjs 2.0.0
 # LUTr-Conversion-Date: 2026-07-27
+# LUTr-Source-Labels: purpose=HDR screenshot to reasonable SDR levels; preset=01 DRG; operation=level compression plus saturation increase
+# LUTr-Conversion-Warning: The upstream project declares no HDR transfer, primaries, peak luminance, mastering display, or SDR output encoding; this is not a standards-defined PQ or HLG tone map.
 # LUTr-Note: Preserve this metadata and the upstream license notices when redistributing.
 # LUTr-Upstream-Comment: Created by: Affinity Photo (Serif Europe Ltd.)
 # LUTr-Upstream-Comment: LUT size

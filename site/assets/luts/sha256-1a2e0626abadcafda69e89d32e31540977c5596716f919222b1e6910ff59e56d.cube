@@ -1,6 +1,6 @@
 # LUTr-Schema-Version: 2
 # LUTr-ID: sha256-1a2e0626abadcafda69e89d32e31540977c5596716f919222b1e6910ff59e56d
-# LUTr-Title: Generate by Resolve
+# LUTr-Title: Sony a6000 Portrait -3 to Vivid Look
 # LUTr-Collection: Sony a6000
 # LUTr-Collection-ID: jonmatifa-a6000-luts
 # LUTr-Source: https://github.com/jonmatifa/a6000-LUTs
@@ -11,15 +11,15 @@
 # LUTr-License: CC0-1.0
 # LUTr-License-URL: https://github.com/jonmatifa/a6000-LUTs/blob/master/LICENSE
 # LUTr-License-Basis: repo-license-file
-# LUTr-Transform-Class: camera-transform
-# LUTr-Tags: camera, sony, a6000, log, 3d-lut, cube
+# LUTr-Transform-Class: creative-look
+# LUTr-Tags: camera, sony, a6000, log, 3d-lut, creative, portrait-profile, vivid, film-emulation, high-saturation, cube
 # LUTr-Input-Color-Space:
 # LUTr-Input-Gamut: unspecified
-# LUTr-Input-Transfer: unspecified
+# LUTr-Input-Transfer: sony-a6000-portrait-minus3-custom
 # LUTr-Output-Color-Space:
 # LUTr-Output-Gamut: unspecified
-# LUTr-Output-Transfer: unspecified
-# LUTr-Color-Space-Confidence: unverified
+# LUTr-Output-Transfer: display-referred-unspecified
+# LUTr-Color-Space-Confidence: descriptor-only
 # LUTr-Domain-Normalized: true
 # LUTr-Shaper: none
 # LUTr-Original-Grid: 33x33x33
@@ -28,9 +28,11 @@
 # LUTr-Conversion-Method: Metadata normalization; numeric LUT samples preserved
 # LUTr-Conversion-Tool: LUTr scripts/convert-all-to-cube.mjs 2.0.0
 # LUTr-Conversion-Date: 2026-07-27
+# LUTr-Source-Labels: input=Sony a6000 Portrait picture profile, contrast -3, saturation -3, sharpness -3; output=lightly modified film-emulation look with increased saturation
+# LUTr-Conversion-Warning: The upstream project does not declare output transfer characteristics or chromaticities; treat this as a creative look for its custom a6000 input profile.
 # LUTr-Note: Preserve this metadata and the upstream license notices when redistributing.
 
-TITLE "Generate by Resolve"
+TITLE "Sony a6000 Portrait -3 to Vivid Look"
 LUT_3D_SIZE 33
 DOMAIN_MIN 0 0 0
 DOMAIN_MAX 1 1 1

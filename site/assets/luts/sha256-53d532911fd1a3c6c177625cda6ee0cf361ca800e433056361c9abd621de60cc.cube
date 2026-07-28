@@ -1,6 +1,6 @@
 # LUTr-Schema-Version: 2
 # LUTr-ID: sha256-53d532911fd1a3c6c177625cda6ee0cf361ca800e433056361c9abd621de60cc
-# LUTr-Title: HDR2SDR general
+# LUTr-Title: HDR2SDR General
 # LUTr-Collection: HDR2SDR
 # LUTr-Collection-ID: sverit-hdr2sdr-luts
 # LUTr-Source: https://github.com/sverit/HDR2SDR-LUTs
@@ -28,13 +28,15 @@
 # LUTr-Conversion-Method: Metadata normalization; numeric LUT samples preserved
 # LUTr-Conversion-Tool: LUTr scripts/convert-all-to-cube.mjs 2.0.0
 # LUTr-Conversion-Date: 2026-07-27
+# LUTr-Source-Labels: purpose=HDR screenshot to reasonable SDR levels; preset=general; operation=level compression plus saturation increase
+# LUTr-Conversion-Warning: The upstream project declares no HDR transfer, primaries, peak luminance, mastering display, or SDR output encoding; this is not a standards-defined PQ or HLG tone map.
 # LUTr-Note: Preserve this metadata and the upstream license notices when redistributing.
 # LUTr-Upstream-Comment: Created by: Affinity Photo (Serif Europe Ltd.)
 # LUTr-Upstream-Comment: LUT size
 # LUTr-Upstream-Comment: data domain
 # LUTr-Upstream-Comment: LUT data points
 
-TITLE "HDR2SDR general"
+TITLE "HDR2SDR General"
 LUT_3D_SIZE 32
 DOMAIN_MIN 0 0 0
 DOMAIN_MAX 1 1 1

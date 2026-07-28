@@ -1,6 +1,6 @@
 # LUTr-Schema-Version: 2
 # LUTr-ID: sha256-28544b4b19d50fd48f50abd4adade180eb3e0cf174960f2feadabf9a7274f110
-# LUTr-Title: AlexaV3 K1S1 LogC2Video Rec709 EE nuke3d
+# LUTr-Title: ARRI Alexa V3 K1S1 LogC to Rec.709 (3D)
 # LUTr-Collection: ARRI Alexa
 # LUTr-Collection-ID: vfxwiki-arri-alexa-luts
 # LUTr-Source: https://github.com/vfxwiki/ArriAlexaLuts
@@ -12,14 +12,14 @@
 # LUTr-License-URL: https://github.com/vfxwiki/ArriAlexaLuts/blob/master/LICENSE
 # LUTr-License-Basis: repo-license-file
 # LUTr-Transform-Class: camera-transform
-# LUTr-Tags: technical, camera, arri, alexa, logc, 3d-lut, cube
+# LUTr-Tags: technical, camera, arri, alexa, logc, 3d-lut, logc3, awg3, k1s1, rec709, cube
 # LUTr-Input-Color-Space:
-# LUTr-Input-Gamut: unspecified
-# LUTr-Input-Transfer: unspecified
-# LUTr-Output-Color-Space: srgb
+# LUTr-Input-Gamut: arri-wide-gamut-3
+# LUTr-Input-Transfer: arri-logc3-ei-unspecified
+# LUTr-Output-Color-Space: rec709-gamma24
 # LUTr-Output-Gamut: rec709
-# LUTr-Output-Transfer: srgb
-# LUTr-Color-Space-Confidence: camera-profile-input-required
+# LUTr-Output-Transfer: gamma24
+# LUTr-Color-Space-Confidence: declared-by-source
 # LUTr-Domain-Normalized: true
 # LUTr-Shaper: none
 # LUTr-Original-Grid: 32x32x32
@@ -28,11 +28,13 @@
 # LUTr-Conversion-Method: Metadata normalization; numeric LUT samples preserved
 # LUTr-Conversion-Tool: LUTr scripts/convert-all-to-cube.mjs 2.0.0
 # LUTr-Conversion-Date: 2026-07-27
+# LUTr-Source-Labels: input=ARRI Alexa V3 LogC/Alexa Wide Gamut; output=K1S1 ITU Rec.709 video; range=full input/full output; tool=alexalutconv 2.09
+# LUTr-Conversion-Warning: The source filename does not declare exposure index; use only where the LogC3 normalization matches the source footage.
 # LUTr-Note: Preserve this metadata and the upstream license notices when redistributing.
 # LUTr-Upstream-Comment: Alexa conversion LUT, logc2video, itu709. Full in/full out.
 # LUTr-Upstream-Comment: created by alexalutconv (2.09)
 
-TITLE "AlexaV3 K1S1 LogC2Video Rec709 EE nuke3d"
+TITLE "ARRI Alexa V3 K1S1 LogC to Rec.709 (3D)"
 LUT_3D_SIZE 32
 DOMAIN_MIN 0 0 0
 DOMAIN_MAX 1 1 1

@@ -117,6 +117,180 @@ const collections = {
   },
 };
 
+// Evidence-backed per-file metadata for collections whose repository-level
+// declarations are not precise enough to describe every LUT.
+const researchedOverrides = new Map(Object.entries({
+  "submissions/jonmatifa-a6000-luts/a6000 slog2_1.C0006.cube": {
+    title: "Sony a6000 Portrait -3 to S-Log2 Emulation",
+    inputGamut: "unspecified",
+    inputTransfer: "sony-a6000-portrait-minus3-custom",
+    outputGamut: "unspecified",
+    outputTransfer: "sony-s-log2",
+    confidence: "descriptor-only",
+    sourceLabels: "input=Sony a6000 Portrait picture profile, contrast -3, saturation -3, sharpness -3; output=S-Log2 emulation generated from color-card footage in DaVinci Resolve",
+    addTags: ["portrait-profile", "s-log2", "emulation", "color-card"],
+    conversionWarning: "The upstream project does not declare input or output chromaticities; the S-Log2 result is an emulation, not a verified Sony color-space conversion.",
+  },
+  "submissions/jonmatifa-a6000-luts/a6000 slog3_1.C0006.cube": {
+    title: "Sony a6000 Portrait -3 to S-Log3 Emulation",
+    inputGamut: "unspecified",
+    inputTransfer: "sony-a6000-portrait-minus3-custom",
+    outputGamut: "unspecified",
+    outputTransfer: "sony-s-log3",
+    confidence: "descriptor-only",
+    sourceLabels: "input=Sony a6000 Portrait picture profile, contrast -3, saturation -3, sharpness -3; output=S-Log3 emulation generated from color-card footage in DaVinci Resolve",
+    addTags: ["portrait-profile", "s-log3", "emulation", "color-card"],
+    conversionWarning: "The upstream project does not declare input or output chromaticities; the S-Log3 result is an emulation, not a verified Sony color-space conversion.",
+  },
+  "submissions/jonmatifa-a6000-luts/a6000 vivid_1.C0006.cube": {
+    title: "Sony a6000 Portrait -3 to Vivid Look",
+    transformClass: "creative-look",
+    inputGamut: "unspecified",
+    inputTransfer: "sony-a6000-portrait-minus3-custom",
+    outputGamut: "unspecified",
+    outputTransfer: "display-referred-unspecified",
+    confidence: "descriptor-only",
+    sourceLabels: "input=Sony a6000 Portrait picture profile, contrast -3, saturation -3, sharpness -3; output=lightly modified film-emulation look with increased saturation",
+    addTags: ["creative", "portrait-profile", "vivid", "film-emulation", "high-saturation"],
+    conversionWarning: "The upstream project does not declare output transfer characteristics or chromaticities; treat this as a creative look for its custom a6000 input profile.",
+  },
+  "submissions/sverit-hdr2sdr-luts/HDR2SDR_01_DRG.cube": {
+    sourceLabels: "purpose=HDR screenshot to reasonable SDR levels; preset=01 DRG; operation=level compression plus saturation increase",
+    conversionWarning: "The upstream project declares no HDR transfer, primaries, peak luminance, mastering display, or SDR output encoding; this is not a standards-defined PQ or HLG tone map.",
+  },
+  "submissions/sverit-hdr2sdr-luts/HDR2SDR_02_WF.cube": {
+    sourceLabels: "purpose=HDR screenshot to reasonable SDR levels; preset=02 WF; operation=level compression plus saturation increase",
+    conversionWarning: "The upstream project declares no HDR transfer, primaries, peak luminance, mastering display, or SDR output encoding; this is not a standards-defined PQ or HLG tone map.",
+  },
+  "submissions/sverit-hdr2sdr-luts/HDR2SDR_03_BF.cube": {
+    sourceLabels: "purpose=HDR screenshot to reasonable SDR levels; preset=03 BF; operation=level compression plus saturation increase",
+    conversionWarning: "The upstream project declares no HDR transfer, primaries, peak luminance, mastering display, or SDR output encoding; this is not a standards-defined PQ or HLG tone map.",
+  },
+  "submissions/sverit-hdr2sdr-luts/HDR2SDR_04_BL3.cube": {
+    sourceLabels: "purpose=HDR screenshot to reasonable SDR levels; preset=04 BL3; operation=level compression plus saturation increase",
+    conversionWarning: "The upstream project declares no HDR transfer, primaries, peak luminance, mastering display, or SDR output encoding; this is not a standards-defined PQ or HLG tone map.",
+  },
+  "submissions/sverit-hdr2sdr-luts/HDR2SDR_general.cube": {
+    title: "HDR2SDR General",
+    sourceLabels: "purpose=HDR screenshot to reasonable SDR levels; preset=general; operation=level compression plus saturation increase",
+    conversionWarning: "The upstream project declares no HDR transfer, primaries, peak luminance, mastering display, or SDR output encoding; this is not a standards-defined PQ or HLG tone map.",
+  },
+  "submissions/videovillage-red-conversion-luts/Masters/REDlogFilm_to_REDgamma.cube": {
+    inputGamut: "unspecified",
+    inputTransfer: "red-logfilm",
+    outputGamut: "unchanged-unspecified",
+    outputTransfer: "redgamma",
+    confidence: "declared-by-source",
+    sourceLabels: "input=REDlogFilm post-debayered footage; output=REDgamma viewing curve; normalized mean absolute error=0.0824788",
+    addTags: ["redgamma", "curve-only", "reverse-engineered"],
+    conversionWarning: "This reverse-engineered 1D curve does not declare RGB primaries; gamut is unchanged but unspecified.",
+  },
+  "submissions/videovillage-red-conversion-luts/Masters/REDlogFilm_to_REDgamma2.cube": {
+    inputGamut: "unspecified",
+    inputTransfer: "red-logfilm",
+    outputGamut: "unchanged-unspecified",
+    outputTransfer: "redgamma2",
+    confidence: "declared-by-source",
+    sourceLabels: "input=REDlogFilm post-debayered footage; output=REDgamma2 viewing curve; normalized mean absolute error=0.0340227",
+    addTags: ["redgamma2", "curve-only", "reverse-engineered"],
+    conversionWarning: "This reverse-engineered 1D curve does not declare RGB primaries; gamut is unchanged but unspecified.",
+  },
+  "submissions/videovillage-red-conversion-luts/Masters/REDlogFilm_to_REDgamma3.cube": {
+    inputGamut: "unspecified",
+    inputTransfer: "red-logfilm",
+    outputGamut: "unchanged-unspecified",
+    outputTransfer: "redgamma3",
+    confidence: "declared-by-source",
+    sourceLabels: "input=REDlogFilm post-debayered footage; output=REDgamma3 viewing curve; normalized mean absolute error=0.0177164",
+    addTags: ["redgamma3", "curve-only", "reverse-engineered"],
+    conversionWarning: "This reverse-engineered 1D curve does not declare RGB primaries; gamut is unchanged but unspecified.",
+  },
+  "submissions/videovillage-red-conversion-luts/Masters/REDlogFilm_to_REDgamma4.cube": {
+    inputGamut: "unspecified",
+    inputTransfer: "red-logfilm",
+    outputGamut: "unchanged-unspecified",
+    outputTransfer: "redgamma4",
+    confidence: "declared-by-source",
+    sourceLabels: "input=REDlogFilm post-debayered footage; output=REDgamma4 viewing curve; normalized mean absolute error=0.0244737",
+    addTags: ["redgamma4", "curve-only", "reverse-engineered"],
+    conversionWarning: "This reverse-engineered 1D curve does not declare RGB primaries; gamut is unchanged but unspecified.",
+  },
+  "submissions/vfxwiki-arri-alexa-luts/AlexaV3_K1S1_LogC2Video_EE_nuke1d.cube": {
+    title: "ARRI Alexa V3 K1S1 LogC to Video (1D)",
+    output: "",
+    inputGamut: "arri-wide-gamut-3",
+    inputTransfer: "arri-logc3-ei-unspecified",
+    outputGamut: "arri-wide-gamut-3",
+    outputTransfer: "arri-k1s1-video",
+    confidence: "declared-by-source",
+    sourceLabels: "input=ARRI Alexa V3 LogC/Alexa Wide Gamut; output=K1S1 video rendering curve; range=full input/full output; tool=alexalutconv 2.09",
+    addTags: ["logc3", "awg3", "k1s1", "curve-only"],
+    conversionWarning: "This 1D LUT applies the ARRI K1S1 video rendering curve but cannot convert Alexa Wide Gamut primaries; the source filename does not declare exposure index.",
+  },
+  "submissions/vfxwiki-arri-alexa-luts/AlexaV3_K1S1_LogC2Video_Rec709_EE_nuke3d.cube": {
+    title: "ARRI Alexa V3 K1S1 LogC to Rec.709 (3D)",
+    output: "rec709-gamma24",
+    inputGamut: "arri-wide-gamut-3",
+    inputTransfer: "arri-logc3-ei-unspecified",
+    outputGamut: "rec709",
+    outputTransfer: "gamma24",
+    confidence: "declared-by-source",
+    sourceLabels: "input=ARRI Alexa V3 LogC/Alexa Wide Gamut; output=K1S1 ITU Rec.709 video; range=full input/full output; tool=alexalutconv 2.09",
+    addTags: ["logc3", "awg3", "k1s1", "rec709"],
+    conversionWarning: "The source filename does not declare exposure index; use only where the LogC3 normalization matches the source footage.",
+  },
+  "submissions/vfxwiki-arri-alexa-luts/ArriLogc2NormPrimaryLin_stageA.csp": {
+    title: "ARRI LogC to Normal-Primaries Linear — Stage A",
+    output: "linear-rec709",
+    inputGamut: "arri-wide-gamut-3",
+    inputTransfer: "arri-logc3-ei-unspecified",
+    outputGamut: "rec709",
+    outputTransfer: "linear",
+    confidence: "inferred-from-source-label",
+    sourceLabels: "filename=ArriLogc2NormPrimaryLin_stageA; metadata=Generated by Foundry LUT",
+    addTags: ["logc3", "awg3", "linear", "rec709", "project-specific"],
+    conversionWarning: "Endpoints are inferred from the filename; the CSP contains no color-space declaration and was not referenced by the supplied Nuke graph.",
+  },
+  "submissions/vfxwiki-arri-alexa-luts/LinAces2rec709A.csp": {
+    title: "Linear ACEScg to Rec.709 D60 MatchGrade",
+    input: "acescg",
+    output: "",
+    inputGamut: "aces-ap1",
+    inputTransfer: "linear",
+    outputGamut: "rec709",
+    outputTransfer: "gamma24-d60-simulation",
+    confidence: "inferred-from-source-label",
+    sourceLabels: "graph input=ACEScg; graph reference output=Rec.709 D60 simulation; node label=matchGrade Hack; metadata=Generated by Foundry NukeX MatchGrade",
+    addTags: ["acescg", "rec709", "d60", "matchgrade", "project-specific"],
+    conversionWarning: "The Nuke graph supports ACEScg input and a Rec.709 D60-simulation target, but this project-specific MatchGrade is not a canonical ACES output transform.",
+  },
+  "submissions/vfxwiki-arri-alexa-luts/LinArriOffset2rec709.csp": {
+    title: "Linear ARRI Offset to Rec.709 CMS LUT",
+    output: "",
+    inputGamut: "arri-wide-gamut-3",
+    inputTransfer: "linear-with-undocumented-offset",
+    outputGamut: "rec709",
+    outputTransfer: "gamma24",
+    confidence: "inferred-from-source-label",
+    sourceLabels: "filename=LinArriOffset2rec709; graph node label=CMS LUT; graph working space=ACEScg; metadata=Generated by Foundry LUT",
+    addTags: ["awg3", "linear", "rec709", "cms", "project-specific"],
+    conversionWarning: "The filename and Nuke graph identify the broad path, but neither defines the input offset or a canonical color-space endpoint.",
+  },
+  "submissions/vfxwiki-arri-alexa-luts/LinNormalPrimarys2Arrirec709.csp": {
+    title: "Linear Normal Primaries to ARRI Rec.709 MatchGrade",
+    input: "",
+    output: "",
+    inputGamut: "rec709",
+    inputTransfer: "linear",
+    outputGamut: "rec709",
+    outputTransfer: "arri-k1s1-video",
+    confidence: "inferred-from-source-label",
+    sourceLabels: "filename=LinNormalPrimarys2Arrirec709; metadata=Generated by Foundry NukeX MatchGrade",
+    addTags: ["linear", "rec709", "k1s1", "matchgrade", "project-specific"],
+    conversionWarning: "Endpoints are inferred from the filename; the CSP contains no explicit color-space declaration and was not referenced by the supplied Nuke graph.",
+  },
+}));
+
 function walk(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     if (entry.name === ".git" || entry.name.endsWith(".info.md")) return [];
@@ -809,22 +983,23 @@ for (const { collectionId, collection, file } of selectedSources) {
     const sidecar = sidecarMeta(file);
     const sourceHeader = parseLutrHeader(sourceText);
     const headerValue = (name, fallback = "") => sourceHeader.has(name) ? sourceHeader.get(name) : fallback;
-    const title = headerValue("Title", cleanTitle(file, sourceText));
-    const input = normalizedColorSpace(headerValue("Input-Color-Space", collection.input));
-    const output = normalizedColorSpace(headerValue("Output-Color-Space", collection.output));
+    const researched = researchedOverrides.get(localRelativeSource) || {};
+    const title = researched.title || headerValue("Title", cleanTitle(file, sourceText));
+    const input = normalizedColorSpace(researched.input ?? headerValue("Input-Color-Space", collection.input));
+    const output = normalizedColorSpace(researched.output ?? headerValue("Output-Color-Space", collection.output));
     const sourceUrl = headerValue("Source", sidecar.source || collection.source);
     const license = headerValue("License", sidecar.license || collection.license).replace(/\.$/, "");
     const licenseUrl = headerValue("License-URL", sidecar.licenseUrl || collection.licenseUrl);
     const embeddedTags = headerValue("Tags").split(",").map((value) => value.trim()).filter(Boolean);
-    const tags = [...new Set([...collection.tags, ...embeddedTags, ...(sidecar.tags || []), ...filenameTags(title), "cube"])];
+    const tags = [...new Set([...collection.tags, ...embeddedTags, ...(sidecar.tags || []), ...filenameTags(title), ...(researched.addTags || []), "cube"])];
     const relativeSource = headerValue("Source-File", localRelativeSource);
     const sourceSha = headerValue("Source-SHA256", sha256(sourceBuffer));
     const preservedSourceFormat = headerValue("Source-Format", sourceFormat);
     const meta = {
       title, collection, collectionId, relativeSource, sourceFormat: preservedSourceFormat,
       sourceSha, source: sourceUrl, license, licenseUrl, tags, input, output,
-      transformClass: headerValue("Transform-Class", collection.transformClass),
-      confidence: headerValue("Color-Space-Confidence", collection.confidence),
+      transformClass: researched.transformClass || headerValue("Transform-Class", collection.transformClass),
+      confidence: researched.confidence || headerValue("Color-Space-Confidence", collection.confidence),
       retrieved: headerValue("Retrieved", sidecar.retrieved || retrievedDate),
       conversionDate: headerValue("Conversion-Date", retrievedDate),
       licenseBasis: headerValue("License-Basis", sidecar.licenseBasis || collection.licenseBasis),
@@ -832,12 +1007,13 @@ for (const { collectionId, collection, file } of selectedSources) {
       author: headerValue("Author", sidecar.author),
       authorUrl: headerValue("Author-URL", sidecar.authorUrl),
       attribution: headerValue("Attribution", sidecar.attribution),
-      sourceLabels: headerValue("Source-Labels"),
+      sourceLabels: researched.sourceLabels || headerValue("Source-Labels"),
       duplicateAssets: headerValue("Duplicate-Assets"),
-      inputGamut: headerValue("Input-Gamut"),
-      inputTransfer: headerValue("Input-Transfer"),
-      outputGamut: headerValue("Output-Gamut"),
-      outputTransfer: headerValue("Output-Transfer"),
+      inputGamut: researched.inputGamut || headerValue("Input-Gamut"),
+      inputTransfer: researched.inputTransfer || headerValue("Input-Transfer"),
+      outputGamut: researched.outputGamut || headerValue("Output-Gamut"),
+      outputTransfer: researched.outputTransfer || headerValue("Output-Transfer"),
+      conversionWarning: researched.conversionWarning || null,
     };
     try {
       let parsed;
@@ -882,6 +1058,7 @@ for (const { collectionId, collection, file } of selectedSources) {
       const outputGamut = meta.outputGamut || derivedOutputGamut;
       const outputTransfer = meta.outputTransfer || derivedOutputTransfer;
       const warning = joinWarnings(
+        meta.conversionWarning,
         sourceFormat === "CLF"
           ? "A sampled 3D CUBE is bounded to DOMAIN_MIN/MAX 0..1 and cannot preserve CLF values outside its input domain."
           : null,

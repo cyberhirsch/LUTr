@@ -1,6 +1,6 @@
 # LUTr-Schema-Version: 2
 # LUTr-ID: sha256-46c25ba6c9f9db74f39f7095704a2dbdd14087375c98084180ee40026c191422
-# LUTr-Title: Generate by Resolve
+# LUTr-Title: Sony a6000 Portrait -3 to S-Log2 Emulation
 # LUTr-Collection: Sony a6000
 # LUTr-Collection-ID: jonmatifa-a6000-luts
 # LUTr-Source: https://github.com/jonmatifa/a6000-LUTs
@@ -12,14 +12,14 @@
 # LUTr-License-URL: https://github.com/jonmatifa/a6000-LUTs/blob/master/LICENSE
 # LUTr-License-Basis: repo-license-file
 # LUTr-Transform-Class: camera-transform
-# LUTr-Tags: camera, sony, a6000, log, 3d-lut, cube
+# LUTr-Tags: camera, sony, a6000, log, 3d-lut, portrait-profile, s-log2, emulation, color-card, cube
 # LUTr-Input-Color-Space:
 # LUTr-Input-Gamut: unspecified
-# LUTr-Input-Transfer: unspecified
+# LUTr-Input-Transfer: sony-a6000-portrait-minus3-custom
 # LUTr-Output-Color-Space:
 # LUTr-Output-Gamut: unspecified
-# LUTr-Output-Transfer: unspecified
-# LUTr-Color-Space-Confidence: unverified
+# LUTr-Output-Transfer: sony-s-log2
+# LUTr-Color-Space-Confidence: descriptor-only
 # LUTr-Domain-Normalized: true
 # LUTr-Shaper: none
 # LUTr-Original-Grid: 33x33x33
@@ -28,9 +28,11 @@
 # LUTr-Conversion-Method: Metadata normalization; numeric LUT samples preserved
 # LUTr-Conversion-Tool: LUTr scripts/convert-all-to-cube.mjs 2.0.0
 # LUTr-Conversion-Date: 2026-07-27
+# LUTr-Source-Labels: input=Sony a6000 Portrait picture profile, contrast -3, saturation -3, sharpness -3; output=S-Log2 emulation generated from color-card footage in DaVinci Resolve
+# LUTr-Conversion-Warning: The upstream project does not declare input or output chromaticities; the S-Log2 result is an emulation, not a verified Sony color-space conversion.
 # LUTr-Note: Preserve this metadata and the upstream license notices when redistributing.
 
-TITLE "Generate by Resolve"
+TITLE "Sony a6000 Portrait -3 to S-Log2 Emulation"
 LUT_3D_SIZE 33
 DOMAIN_MIN 0 0 0
 DOMAIN_MAX 1 1 1

@@ -14,7 +14,7 @@ The public site is deployed to GitHub Pages from `site/`.
 node scripts/convert-all-to-cube.mjs
 node scripts/build-prototype.mjs
 node scripts/validate-cubes.mjs
-  node scripts/render-prototype-previews.mjs --bases-only
+node scripts/render-prototype-previews.mjs --bases-only
 ```
 
 Canonical conversion and reference-proxy generation require FFmpeg/FFprobe with
@@ -41,4 +41,6 @@ npx serve site
 ```
 
 See [`PRD_VISUAL_LUT_CATALOG.md`](PRD_VISUAL_LUT_CATALOG.md) for the product
-requirements and color-management roadmap.
+requirements and color-management roadmap. The individual evidence audit for
+the 13 camera-transform candidates and five tone maps is in
+[`CAMERA_TONEMAP_RESEARCH.md`](CAMERA_TONEMAP_RESEARCH.md).
