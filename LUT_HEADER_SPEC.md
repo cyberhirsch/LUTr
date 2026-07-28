@@ -274,6 +274,20 @@ bmd-film-4k                    canon-cinestyle
 canon-log-cinema-gamut         canon-log2-cinema-gamut
 canon-log3-cinema-gamut        red-logfilm-rwg
 panasonic-cinelike-d           gopro-protune-native
+cie-xyz-d65                    rec709-gamma18
+rec709-gamma22                 linear-adobe-rgb
+adobe-rgb-gamma22              acescg-gamma22
+acescg-srgb                    apple-log-bt2020
+arri-logc4-awg4                linear-arri-wide-gamut3
+linear-arri-wide-gamut4        bmd-film-gen5-widegamut
+linear-bmd-widegamut           davinci-intermediate-widegamut
+linear-davinci-widegamut       linear-canon-cinema-gamut
+linear-dji-dgamut              linear-panasonic-vgamut
+red-log3g10-rwg                linear-red-wide-gamut
+linear-sony-sgamut             linear-sony-sgamut3
+sony-slog3-sgamut3cine         linear-sony-sgamut3cine
+sony-slog3-venice-sgamut3      linear-sony-venice-sgamut3
+sony-slog3-venice-sgamut3cine  linear-sony-venice-sgamut3cine
 ```
 
 Anything else resolves to `null` → `pipelineReady()` returns false → the card
@@ -282,8 +296,8 @@ preview.
 
 **This is the single most common way to break a LUT.** The schema-2 converter
 lower-cases valid ids and promotes exact resolvable descriptors such as
-`ACES2065-1`. In the 2026-07-28 build, 976 of 1,181 canonical transforms have a
-complete input/output id path. Of those, six are still classified as bounded
+`ACES2065-1`. In the 2026-07-28 build, 1,012 of 1,181 canonical transforms have
+a complete input/output id path. Of those, 42 are still classified as bounded
 approximations, leaving 970 immediately previewable transforms.
 
 The cause in most cases is prose leaking into an enum field:

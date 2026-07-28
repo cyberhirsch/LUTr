@@ -35,6 +35,16 @@ const validColorSpaces = new Set([
   "dji-dlog-dgamut", "bmd-film", "bmd-film-4k", "canon-cinestyle",
   "canon-log-cinema-gamut", "canon-log2-cinema-gamut", "canon-log3-cinema-gamut",
   "red-logfilm-rwg", "panasonic-cinelike-d", "gopro-protune-native",
+  "cie-xyz-d65", "rec709-gamma18", "rec709-gamma22", "linear-adobe-rgb",
+  "adobe-rgb-gamma22", "acescg-gamma22", "acescg-srgb", "apple-log-bt2020",
+  "arri-logc4-awg4", "linear-arri-wide-gamut3", "linear-arri-wide-gamut4",
+  "bmd-film-gen5-widegamut", "linear-bmd-widegamut",
+  "davinci-intermediate-widegamut", "linear-davinci-widegamut",
+  "linear-canon-cinema-gamut", "linear-dji-dgamut", "linear-panasonic-vgamut",
+  "red-log3g10-rwg", "linear-red-wide-gamut", "linear-sony-sgamut",
+  "linear-sony-sgamut3", "sony-slog3-sgamut3cine", "linear-sony-sgamut3cine",
+  "sony-slog3-venice-sgamut3", "linear-sony-venice-sgamut3",
+  "sony-slog3-venice-sgamut3cine", "linear-sony-venice-sgamut3cine",
 ]);
 const validClasses = new Set([
   "creative-look", "film-emulation", "camera-transform", "display-transform",

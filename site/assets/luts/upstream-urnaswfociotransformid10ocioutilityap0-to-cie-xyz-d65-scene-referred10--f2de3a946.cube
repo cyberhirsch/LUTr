@@ -16,10 +16,10 @@
 # LUTr-Input-Color-Space: aces2065-1
 # LUTr-Input-Gamut: aces-ap0
 # LUTr-Input-Transfer: linear
-# LUTr-Output-Color-Space:
-# LUTr-Output-Gamut: unspecified
-# LUTr-Output-Transfer: unspecified
-# LUTr-Color-Space-Confidence: descriptor-only
+# LUTr-Output-Color-Space: cie-xyz-d65
+# LUTr-Output-Gamut: cie-xyz-d65
+# LUTr-Output-Transfer: linear
+# LUTr-Color-Space-Confidence: declared-by-source
 # LUTr-Domain-Normalized: true
 # LUTr-Shaper: none
 # LUTr-Original-Grid: analytic

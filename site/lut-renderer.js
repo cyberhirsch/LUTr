@@ -65,6 +65,23 @@ float decodeValue(float value, int transfer) {
   if (transfer == 15) return pow(10.0, (value - 0.685) / 0.2471896) - 0.01;
   if (transfer == 16) return signedPower(value, 2.4);
   if (transfer == 17) return signedPower(value, 2.2);
+  if (transfer == 18) return signedPower(value, 1.8);
+  if (transfer == 19) return signedPower(value, 2.2);
+  if (transfer == 20) return sign(value - 0.4) * (pow(2.0, 12.0 * abs(value - 0.4)) - 1.0) / 64.0;
+  if (transfer == 21) {
+    float linearBreak = -0.0180569961199113;
+    float encodedBreak = 0.0647954196341293 * log2(2231.82630906769 * linearBreak + 64.0) - 0.295908392682586;
+    return value > encodedBreak
+      ? (pow(2.0, (value + 0.295908392682586) / 0.0647954196341293) - 64.0) / 2231.82630906769
+      : (value - encodedBreak) / 8.803033210537 + linearBreak;
+  }
+  if (transfer == 22) return value >= 0.133883
+    ? exp((value - 0.530013) / 0.0869288) - 0.00549407
+    : (value - 0.0924658) / 8.2836059;
+  if (transfer == 23) return value > 0.02740668
+    ? exp2(value * 14.0 - 7.0) - 0.0075
+    : value / 10.44426855;
+  if (transfer == 24) return sign(value - 0.333) * (pow(10.0, abs(value - 0.333) / 0.224282) - 1.0) / 64.0;
   return value;
 }
 
@@ -93,6 +110,23 @@ float encodeValue(float value, int transfer) {
   if (transfer == 15) return 0.2471896 * log(value + 0.01) / log(10.0) + 0.685;
   if (transfer == 16) return signedPower(value, 1.0 / 2.4);
   if (transfer == 17) return signedPower(value, 1.0 / 2.2);
+  if (transfer == 18) return signedPower(value, 1.0 / 1.8);
+  if (transfer == 19) return signedPower(value, 1.0 / 2.2);
+  if (transfer == 20) return sign(value) * log2(1.0 + 64.0 * abs(value)) / 12.0 + 0.4;
+  if (transfer == 21) {
+    float linearBreak = -0.0180569961199113;
+    float encodedBreak = 0.0647954196341293 * log2(2231.82630906769 * linearBreak + 64.0) - 0.295908392682586;
+    return value > linearBreak
+      ? 0.0647954196341293 * log2(2231.82630906769 * value + 64.0) - 0.295908392682586
+      : 8.803033210537 * (value - linearBreak) + encodedBreak;
+  }
+  if (transfer == 22) return value >= 0.005
+    ? 0.0869288 * log(value + 0.00549407) + 0.530013
+    : 8.2836059 * value + 0.0924658;
+  if (transfer == 23) return value > 0.00262409
+    ? (log2(value + 0.0075) + 7.0) / 14.0
+    : value * 10.44426855;
+  if (transfer == 24) return sign(value) * 0.224282 * log(1.0 + 64.0 * abs(value)) / log(10.0) + 0.333;
   return value;
 }
 

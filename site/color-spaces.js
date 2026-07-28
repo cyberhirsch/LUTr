@@ -55,6 +55,56 @@ const RED_WIDE_GAMUT_TO_XYZ = [
   [-0.079681, -0.347343, 1.516082],
 ];
 
+const ARRI_WIDE_GAMUT_4_TO_XYZ = [
+  [0.7045962430, 0.1310105900, 0.1148490234],
+  [0.2539827829, 0.7836988275, -0.0376817771],
+  [0.0003330848, -0.0045009989, 1.0932264298],
+];
+
+const BLACKMAGIC_WIDE_GAMUT_TO_XYZ = [
+  [0.6064044135, 0.2217196395, 0.1223318034],
+  [0.2677105643, 0.8350287428, -0.1027394738],
+  [-0.0295631637, -0.0914890150, 1.2101106944],
+];
+
+const DAVINCI_WIDE_GAMUT_TO_XYZ = [
+  [0.7004726196, 0.1502710609, 0.0997121760],
+  [0.2737693262, 0.8762781263, -0.1500476192],
+  [-0.0990929299, -0.1433767140, 1.3315281595],
+];
+
+const DJI_DGAMUT_TO_XYZ = [
+  [0.6480310340, 0.1953612403, 0.1070635822],
+  [0.2826839976, 0.8154973332, -0.0981814974],
+  [-0.0183169359, -0.0879684394, 1.1953438910],
+];
+
+const SONY_SGAMUT3_CINE_TO_XYZ = [
+  [0.5988827366, 0.2502590632, 0.1013140567],
+  [0.2146513138, 0.8874235436, -0.1020750240],
+  [-0.0318818633, -0.0325713872, 1.1535117662],
+];
+
+const SONY_VENICE_SGAMUT3_TO_XYZ = [
+  [0.7439823418, 0.0791961145, 0.1272774001],
+  [0.2802735079, 0.7825837575, -0.0628574321],
+  [-0.0197188406, 0.0102115128, 1.0985658435],
+];
+
+const SONY_VENICE_SGAMUT3_CINE_TO_XYZ = [
+  [0.6320480372, 0.2017368335, 0.1166709857],
+  [0.2232348425, 0.8824344404, -0.1056694495],
+  [-0.0408824556, -0.0234263339, 1.1533673052],
+];
+
+const ADOBE_RGB_TO_XYZ = [
+  [0.5767309, 0.1855540, 0.1881852],
+  [0.2973769, 0.6273491, 0.0752741],
+  [0.0270343, 0.0706872, 0.9911085],
+];
+
+const XYZ_D65_TO_XYZ = [[1,0,0],[0,1,0],[0,0,1]];
+
 const ACESCG_TO_XYZ_D60 = [
   [0.6624541811, 0.1340042065, 0.1561876870],
   [0.2722287168, 0.6740817658, 0.0536895174],
@@ -124,6 +174,34 @@ export const COLOR_SPACES = [
   { id: "red-logfilm-rwg", label: "RED Log Film / REDWideGamutRGB", transfer: 15, toXYZ: RED_WIDE_GAMUT_TO_XYZ },
   { id: "panasonic-cinelike-d", label: "Panasonic Cinelike-D / Rec.709 (approximation)", transfer: 16, toXYZ: SRGB_TO_XYZ, approximate: true },
   { id: "gopro-protune-native", label: "GoPro Protune Native (approximation)", transfer: 17, toXYZ: REC2020_TO_XYZ, approximate: true },
+  { id: "cie-xyz-d65", label: "CIE XYZ D65 (scene-linear)", transfer: 0, toXYZ: XYZ_D65_TO_XYZ },
+  { id: "rec709-gamma18", label: "Rec.709 gamma 1.8", transfer: 18, toXYZ: SRGB_TO_XYZ },
+  { id: "rec709-gamma22", label: "Rec.709 gamma 2.2", transfer: 19, toXYZ: SRGB_TO_XYZ },
+  { id: "linear-adobe-rgb", label: "Linear Adobe RGB (1998)", transfer: 0, toXYZ: ADOBE_RGB_TO_XYZ },
+  { id: "adobe-rgb-gamma22", label: "Adobe RGB (1998) gamma 2.2", transfer: 19, toXYZ: ADOBE_RGB_TO_XYZ },
+  { id: "acescg-gamma22", label: "ACES AP1 gamma 2.2", transfer: 19, toXYZ: ACESCG_TO_XYZ },
+  { id: "acescg-srgb", label: "ACES AP1 with sRGB transfer", transfer: 1, toXYZ: ACESCG_TO_XYZ },
+  { id: "apple-log-bt2020", label: "Apple Log / BT.2020 (endpoint approximation)", transfer: 20, toXYZ: REC2020_TO_XYZ, approximate: true },
+  { id: "arri-logc4-awg4", label: "ARRI LogC4 / Wide Gamut 4", transfer: 21, toXYZ: ARRI_WIDE_GAMUT_4_TO_XYZ },
+  { id: "linear-arri-wide-gamut3", label: "Linear ARRI Wide Gamut 3", transfer: 0, toXYZ: ARRI_WIDE_GAMUT_3_TO_XYZ },
+  { id: "linear-arri-wide-gamut4", label: "Linear ARRI Wide Gamut 4", transfer: 0, toXYZ: ARRI_WIDE_GAMUT_4_TO_XYZ },
+  { id: "bmd-film-gen5-widegamut", label: "Blackmagic Film Gen 5 / Wide Gamut", transfer: 22, toXYZ: BLACKMAGIC_WIDE_GAMUT_TO_XYZ },
+  { id: "linear-bmd-widegamut", label: "Linear Blackmagic Wide Gamut", transfer: 0, toXYZ: BLACKMAGIC_WIDE_GAMUT_TO_XYZ },
+  { id: "davinci-intermediate-widegamut", label: "DaVinci Intermediate / Wide Gamut", transfer: 23, toXYZ: DAVINCI_WIDE_GAMUT_TO_XYZ },
+  { id: "linear-davinci-widegamut", label: "Linear DaVinci Wide Gamut", transfer: 0, toXYZ: DAVINCI_WIDE_GAMUT_TO_XYZ },
+  { id: "linear-canon-cinema-gamut", label: "Linear Canon Cinema Gamut (D55)", transfer: 0, toXYZ: CANON_CINEMA_GAMUT_TO_XYZ },
+  { id: "linear-dji-dgamut", label: "Linear DJI D-Gamut", transfer: 0, toXYZ: DJI_DGAMUT_TO_XYZ },
+  { id: "linear-panasonic-vgamut", label: "Linear Panasonic V-Gamut", transfer: 0, toXYZ: PANASONIC_VGAMUT_TO_XYZ },
+  { id: "red-log3g10-rwg", label: "RED Log3G10 / REDWideGamutRGB (endpoint approximation)", transfer: 24, toXYZ: RED_WIDE_GAMUT_TO_XYZ, approximate: true },
+  { id: "linear-red-wide-gamut", label: "Linear REDWideGamutRGB", transfer: 0, toXYZ: RED_WIDE_GAMUT_TO_XYZ },
+  { id: "linear-sony-sgamut", label: "Linear Sony S-Gamut", transfer: 0, toXYZ: SONY_SGAMUT3_TO_XYZ },
+  { id: "linear-sony-sgamut3", label: "Linear Sony S-Gamut3", transfer: 0, toXYZ: SONY_SGAMUT3_TO_XYZ },
+  { id: "sony-slog3-sgamut3cine", label: "Sony S-Log3 / S-Gamut3.Cine", transfer: 4, toXYZ: SONY_SGAMUT3_CINE_TO_XYZ },
+  { id: "linear-sony-sgamut3cine", label: "Linear Sony S-Gamut3.Cine", transfer: 0, toXYZ: SONY_SGAMUT3_CINE_TO_XYZ },
+  { id: "sony-slog3-venice-sgamut3", label: "Sony S-Log3 / Venice S-Gamut3", transfer: 4, toXYZ: SONY_VENICE_SGAMUT3_TO_XYZ },
+  { id: "linear-sony-venice-sgamut3", label: "Linear Sony Venice S-Gamut3", transfer: 0, toXYZ: SONY_VENICE_SGAMUT3_TO_XYZ },
+  { id: "sony-slog3-venice-sgamut3cine", label: "Sony S-Log3 / Venice S-Gamut3.Cine", transfer: 4, toXYZ: SONY_VENICE_SGAMUT3_CINE_TO_XYZ },
+  { id: "linear-sony-venice-sgamut3cine", label: "Linear Sony Venice S-Gamut3.Cine", transfer: 0, toXYZ: SONY_VENICE_SGAMUT3_CINE_TO_XYZ },
 ];
 
 const SPACE_MAP = new Map(COLOR_SPACES.map((space) => [
@@ -178,6 +256,22 @@ export function decodeTransfer(value, transfer) {
   if (transfer === 15) return Math.pow(10, (value - 0.685) / 0.2471896) - 0.01;
   if (transfer === 16) return signedPower(value, 2.4);
   if (transfer === 17) return signedPower(value, 2.2);
+  if (transfer === 18) return signedPower(value, 1.8);
+  if (transfer === 19) return signedPower(value, 2.2);
+  if (transfer === 20) return Math.sign(value - 0.4) * (Math.pow(2, 12 * Math.abs(value - 0.4)) - 1) / 64;
+  if (transfer === 21) {
+    const breakEncoded = 0.0647954196341293 * Math.log2(2231.82630906769 * -0.0180569961199113 + 64) - 0.295908392682586;
+    return value > breakEncoded
+      ? (Math.pow(2, (value + 0.295908392682586) / 0.0647954196341293) - 64) / 2231.82630906769
+      : (value - breakEncoded) / 8.803033210537 + -0.0180569961199113;
+  }
+  if (transfer === 22) return value >= 0.133883
+    ? Math.exp((value - 0.530013) / 0.0869288) - 0.00549407
+    : (value - 0.0924658) / 8.2836059;
+  if (transfer === 23) return value > 0.02740668
+    ? Math.pow(2, value * 14 - 7) - 0.0075
+    : value / 10.44426855;
+  if (transfer === 24) return Math.sign(value - 0.333) * (Math.pow(10, Math.abs(value - 0.333) / 0.224282) - 1) / 64;
   return value;
 }
 
@@ -206,6 +300,22 @@ export function encodeTransfer(value, transfer) {
   if (transfer === 15) return 0.2471896 * Math.log10(value + 0.01) + 0.685;
   if (transfer === 16) return signedPower(value, 1 / 2.4);
   if (transfer === 17) return signedPower(value, 1 / 2.2);
+  if (transfer === 18) return signedPower(value, 1 / 1.8);
+  if (transfer === 19) return signedPower(value, 1 / 2.2);
+  if (transfer === 20) return Math.sign(value) * Math.log2(1 + 64 * Math.abs(value)) / 12 + 0.4;
+  if (transfer === 21) {
+    const breakEncoded = 0.0647954196341293 * Math.log2(2231.82630906769 * -0.0180569961199113 + 64) - 0.295908392682586;
+    return value > -0.0180569961199113
+      ? 0.0647954196341293 * Math.log2(2231.82630906769 * value + 64) - 0.295908392682586
+      : 8.803033210537 * (value + 0.0180569961199113) + breakEncoded;
+  }
+  if (transfer === 22) return value >= 0.005
+    ? 0.0869288 * Math.log(value + 0.00549407) + 0.530013
+    : 8.2836059 * value + 0.0924658;
+  if (transfer === 23) return value > 0.00262409
+    ? (Math.log2(value + 0.0075) + 7) / 14
+    : value * 10.44426855;
+  if (transfer === 24) return Math.sign(value) * 0.224282 * Math.log10(1 + 64 * Math.abs(value)) + 0.333;
   return value;
 }
 

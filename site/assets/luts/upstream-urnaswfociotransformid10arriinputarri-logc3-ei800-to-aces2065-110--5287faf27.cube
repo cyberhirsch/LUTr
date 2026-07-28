@@ -13,13 +13,13 @@
 # LUTr-License-Basis: repo-license-file
 # LUTr-Transform-Class: color-space-conversion
 # LUTr-Tags: technical, aces, ocio, clf, color-management, cube
-# LUTr-Input-Color-Space:
-# LUTr-Input-Gamut: unspecified
+# LUTr-Input-Color-Space: arri-logc3-ei800-awg3
+# LUTr-Input-Gamut: arri-wide-gamut-3
 # LUTr-Input-Transfer: arri-logc3-ei800
 # LUTr-Output-Color-Space: aces2065-1
 # LUTr-Output-Gamut: aces-ap0
 # LUTr-Output-Transfer: linear
-# LUTr-Color-Space-Confidence: descriptor-only
+# LUTr-Color-Space-Confidence: declared-by-source
 # LUTr-Domain-Normalized: true
 # LUTr-Shaper: none
 # LUTr-Original-Grid: analytic
