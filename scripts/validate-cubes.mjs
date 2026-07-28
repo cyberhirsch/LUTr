@@ -7,8 +7,10 @@ const root = process.cwd();
 const lutDir = path.join(root, "site", "assets", "luts");
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "site", "data", "cube-manifest.json"), "utf8"));
 const submissionsDir = path.join(root, "submissions");
-const sourceLibraryAvailable = fs.existsSync(submissionsDir)
-  && fs.readdirSync(submissionsDir, { withFileTypes: true }).some((entry) => entry.isDirectory());
+const rawSubmissionsDir = path.join(root, "submissions-raw");
+const sourceRoots = [submissionsDir, rawSubmissionsDir];
+const sourceLibraryAvailable = sourceRoots.some((dir) => fs.existsSync(dir)
+  && fs.readdirSync(dir, { withFileTypes: true }).some((entry) => entry.isDirectory()));
 const files = fs.readdirSync(lutDir);
 const cubeFiles = files.filter((file) => path.extname(file).toLowerCase() === ".cube");
 const failures = [];
@@ -96,7 +98,9 @@ for (const file of cubeFiles) {
       License: manifestEntry.license, "License-URL": manifestEntry.licenseUrl,
       "License-Basis": manifestEntry.licenseBasis, "Transform-Class": manifestEntry.transformClass,
       "Input-Color-Space": manifestEntry.inputColorSpace || "",
+      "Input-Gamut": manifestEntry.inputGamut, "Input-Transfer": manifestEntry.inputTransfer,
       "Output-Color-Space": manifestEntry.outputColorSpace || "",
+      "Output-Gamut": manifestEntry.outputGamut, "Output-Transfer": manifestEntry.outputTransfer,
       "Color-Space-Confidence": manifestEntry.colorSpaceConfidence,
       "Original-Grid": manifestEntry.originalGrid,
       "Conversion-Grid": manifestEntry.conversionGrid,
@@ -108,14 +112,15 @@ for (const file of cubeFiles) {
   }
   if (!/^[a-f0-9]{64}$/.test(header.get("Source-SHA256") || "")) failures.push(`${file}: invalid Source-SHA256`);
   const sourcePath = path.resolve(root, ...String(header.get("Source-File") || "").split("/"));
-  if (!sourcePath.startsWith(path.resolve(submissionsDir) + path.sep)) {
-    failures.push(`${file}: Source-File must resolve inside submissions`);
+  const matchingRoot = sourceRoots.find((dir) => sourcePath.startsWith(path.resolve(dir) + path.sep));
+  if (!matchingRoot) {
+    failures.push(`${file}: Source-File must resolve inside submissions or submissions-raw`);
   } else if (fs.existsSync(sourcePath)) {
     sourceHashesVerified += 1;
     if (sha256(fs.readFileSync(sourcePath)) !== header.get("Source-SHA256")) {
       failures.push(`${file}: Source-SHA256 does not match original`);
     }
-  } else if (sourceLibraryAvailable) {
+  } else if (fs.existsSync(matchingRoot)) {
     failures.push(`${file}: Source-File does not resolve`);
   } else {
     sourceHashesSkipped += 1;

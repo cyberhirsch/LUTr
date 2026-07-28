@@ -2,7 +2,7 @@
 
 This collection register is maintained for **LUTr — LUTrepository**.
 
-Verified on 2026-07-27. This list focuses on downloadable color-grading,
+Verified on 2026-07-28. This list focuses on downloadable color-grading,
 display-transform, camera, and accessibility LUT assets—not merely software
 that can create or apply LUTs.
 
@@ -28,6 +28,7 @@ that can create or apply LUTs.
 | [Arri Alexa LUTs](https://github.com/vfxwiki/ArriAlexaLuts) | A very small technical collection for ARRI Alexa workflows. Documentation is sparse, so test input/output assumptions before production use. | 2 `.cube` | LGPL-3.0 |
 | [Colour-Blind LUTs](https://github.com/andrewwillmott/colour-blind-luts) | Simulation/correction LUTs for protanopia, deuteranopia, and tritanopia. Useful for accessibility testing and real-time shader workflows rather than creative grading. | 13 LUT-like `.png` assets | Unlicense |
 | [OpenColorIO Config for ACES](https://github.com/AcademySoftwareFoundation/OpenColorIO-Config-ACES) | Authoritative, production-oriented ACES transforms for camera inputs and color pipelines. This is a config/transform collection, not a pack of creative looks. | 58 `.clf` transforms observed | BSD-3-Clause |
+| [Fresh LUTs](https://freshluts.com) | Community-uploaded creative and camera-profile looks. The site terms declare uploads CC0; LUTr separately quarantines files with contradictory embedded rights notices and collapses numerically identical transforms. See the [ingestion audit](FRESHLUTS_INGEST.md). | 679 canonical `.cube` transforms hosted from 720 captures | CC0-1.0 (site terms) |
 
 ## Licensed repositories with provenance caveats
 

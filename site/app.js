@@ -50,6 +50,9 @@ const label = (value) => value
   .replace("Clf", "CLF")
   .replace("Hdr", "HDR")
   .replace("Sdr", "SDR");
+const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+}[character]));
 
 function previewPath(imageId, lut) {
   return lut.previewType ? `./assets/previews/${imageId}/${lut.id}.webp` : null;
@@ -430,14 +433,22 @@ async function openViewer(id) {
     ["Format", lut.size ? `${lut.format} · ${lut.cubeKind === "1D" ? `${lut.size}-sample 1D` : `${lut.size}³`}` : lut.format],
     ["Class", label(lut.transformClass)],
     ["License", lut.license],
+    ["License basis", label(lut.licenseBasis)],
+    ["Author", lut.author || "Not declared"],
     ["LUT input", colorSpaceLabel(lut.inputColorSpace)],
+    ["Input encoding", `${label(lut.inputGamut)} / ${label(lut.inputTransfer)}`],
     ["LUT output", colorSpaceLabel(lut.outputColorSpace)],
+    ["Output encoding", `${label(lut.outputGamut)} / ${label(lut.outputTransfer)}`],
     ["Image input", colorSpaceLabel(image.colorSpace)],
+    ["Source labels", lut.sourceLabels || "Not supplied"],
+    ["Duplicates", lut.duplicateAssets ? `${lut.duplicateAssets.split(";").length} upstream copies collapsed` : "None detected"],
     ["Intensity", lut.intensity == null ? "Not measured" : `${Math.round(lut.intensity * 1000) / 10}% mean deviation`],
     ["Tags", lut.tags.join(", ")],
   ];
-  els.viewerMetadata.innerHTML = rows.map(([term, value]) => `<dt>${term}</dt><dd>${value}</dd>`).join("");
-  els.viewerSource.href = lut.source;
+  els.viewerMetadata.innerHTML = rows
+    .map(([term, value]) => `<dt>${escapeHtml(term)}</dt><dd>${escapeHtml(value)}</dd>`)
+    .join("");
+  els.viewerSource.href = lut.assetUrl || lut.source;
   els.compareFromViewer.textContent = state.compare.includes(lut.id) ? "Remove from compare" : "Add to compare";
   configureViewerColorTools(lut, image);
   els.viewerDialog.showModal();

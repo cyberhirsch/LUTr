@@ -94,6 +94,12 @@ const collections = {
     transformClass: "color-space-conversion", tags: ["technical", "aces", "ocio", "clf", "color-management"],
     input: null, output: null, confidence: "descriptor-only", licenseBasis: "repo-license-file",
   },
+  "freshluts-community": {
+    name: "Fresh LUTs", source: "https://freshluts.com",
+    license: "CC0-1.0", licenseUrl: "https://freshluts.com/termsandconditions",
+    transformClass: "creative-look", tags: ["creative", "freshluts", "community"],
+    input: null, output: "srgb", confidence: "camera-profile-input-required", licenseBasis: "site-terms",
+  },
 };
 
 function walk(dir) {
@@ -594,10 +600,14 @@ function joinWarnings(...warnings) {
 }
 
 function cubeMetadata(meta, source, parsed, method, warning) {
-  const [inputGamut, inputTransfer] = meta.input
+  const [derivedInputGamut, derivedInputTransfer] = meta.input
     ? colorParts(meta.input) : descriptorParts(parsed.inputDescriptor);
-  const [outputGamut, outputTransfer] = meta.output
+  const [derivedOutputGamut, derivedOutputTransfer] = meta.output
     ? colorParts(meta.output) : descriptorParts(parsed.outputDescriptor);
+  const inputGamut = meta.inputGamut || derivedInputGamut;
+  const inputTransfer = meta.inputTransfer || derivedInputTransfer;
+  const outputGamut = meta.outputGamut || derivedOutputGamut;
+  const outputTransfer = meta.outputTransfer || derivedOutputTransfer;
   const requiredFields = [
     ["Schema-Version", "2"],
     ["ID", meta.id], ["Title", meta.title], ["Collection", meta.collection.name],
@@ -606,7 +616,7 @@ function cubeMetadata(meta, source, parsed, method, warning) {
     ["Source-File", meta.relativeSource], ["Source-Format", meta.sourceFormat],
     ["Source-SHA256", meta.sourceSha], ["License", meta.license],
     ["License-URL", meta.licenseUrl], ["License-Basis", meta.licenseBasis],
-    ["Transform-Class", meta.collection.transformClass], ["Tags", meta.tags.join(", ")],
+    ["Transform-Class", meta.transformClass], ["Tags", meta.tags.join(", ")],
     ["Input-Color-Space", meta.input],
     ["Input-Gamut", inputGamut], ["Input-Transfer", inputTransfer],
     ["Output-Color-Space", meta.output],
@@ -618,11 +628,12 @@ function cubeMetadata(meta, source, parsed, method, warning) {
     ["Conversion-Interpolation", parsed.interpolation || "none"],
     ["Conversion-Method", method],
     ["Conversion-Tool", `LUTr scripts/convert-all-to-cube.mjs ${toolVersion}`],
-    ["Conversion-Date", generatedDate],
+    ["Conversion-Date", meta.conversionDate],
   ];
   const optionalFields = [
     ["Asset-URL", meta.assetUrl], ["Author", meta.author], ["Author-URL", meta.authorUrl],
     ["Attribution", meta.attribution], ["Source-Labels", meta.sourceLabels],
+    ["Duplicate-Assets", meta.duplicateAssets],
     ["Conversion-Warning", warning],
     ["Upstream-ID", parsed.upstreamId], ["Upstream-Name", parsed.upstreamName],
     ["Upstream-Input-Descriptor", parsed.inputDescriptor],
@@ -635,9 +646,14 @@ function cubeMetadata(meta, source, parsed, method, warning) {
   ].filter(([, value]) => value != null && value !== "");
   const upstreamComments = source.split(/\r?\n/)
     .filter((line) => /^\s*#/.test(line) && !/^\s*#\s*LUTr-/i.test(line))
+    .map((line) => line.replace(/^\s*#\s?/, "").trim())
+    .filter(Boolean)
     .slice(0, 30)
-    .map((line) => `# LUTr-Upstream-Comment: ${line.replace(/^\s*#\s?/, "").trim()}`);
-  const line = ([name, value]) => `# LUTr-${name}: ${String(value ?? "").replace(/\r?\n/g, " ")}`;
+    .map((value) => `# LUTr-Upstream-Comment: ${value}`);
+  const line = ([name, value]) => {
+    const clean = String(value ?? "").replace(/\r?\n/g, " ");
+    return `# LUTr-${name}:${clean ? ` ${clean}` : ""}`;
+  };
   return [...requiredFields.map(line), ...optionalFields.map(line), ...upstreamComments].join("\n");
 }
 
@@ -687,7 +703,7 @@ for (const { collectionId, collection, file } of selectedSources) {
     const sourceBuffer = fs.readFileSync(file);
     const sourceText = [".cube", ".3dl", ".clf", ".csp"].includes(path.extname(file).toLowerCase())
       ? sourceBuffer.toString("utf8").replace(/^\uFEFF/, "") : "";
-    const relativeSource = path.relative(root, file).replaceAll("\\", "/");
+    const localRelativeSource = path.relative(root, file).replaceAll("\\", "/");
     const extension = path.extname(file).toLowerCase();
     const sourceFormat = extension === ".png" ? "HALD-PNG"
       : [".tif", ".tiff"].includes(extension) ? "HALD-TIF"
@@ -703,18 +719,27 @@ for (const { collectionId, collection, file } of selectedSources) {
     const licenseUrl = headerValue("License-URL", sidecar.licenseUrl || collection.licenseUrl);
     const embeddedTags = headerValue("Tags").split(",").map((value) => value.trim()).filter(Boolean);
     const tags = [...new Set([...collection.tags, ...embeddedTags, ...(sidecar.tags || []), ...filenameTags(title), "cube"])];
-    const sourceSha = sha256(sourceBuffer);
+    const relativeSource = headerValue("Source-File", localRelativeSource);
+    const sourceSha = headerValue("Source-SHA256", sha256(sourceBuffer));
+    const preservedSourceFormat = headerValue("Source-Format", sourceFormat);
     const meta = {
-      title, collection, collectionId, relativeSource, sourceFormat,
+      title, collection, collectionId, relativeSource, sourceFormat: preservedSourceFormat,
       sourceSha, source: sourceUrl, license, licenseUrl, tags, input, output,
+      transformClass: headerValue("Transform-Class", collection.transformClass),
       confidence: headerValue("Color-Space-Confidence", collection.confidence),
       retrieved: headerValue("Retrieved", sidecar.retrieved || retrievedDate),
+      conversionDate: headerValue("Conversion-Date", retrievedDate),
       licenseBasis: headerValue("License-Basis", sidecar.licenseBasis || collection.licenseBasis),
       assetUrl: headerValue("Asset-URL", sidecar.assetUrl),
       author: headerValue("Author", sidecar.author),
       authorUrl: headerValue("Author-URL", sidecar.authorUrl),
       attribution: headerValue("Attribution", sidecar.attribution),
       sourceLabels: headerValue("Source-Labels"),
+      duplicateAssets: headerValue("Duplicate-Assets"),
+      inputGamut: headerValue("Input-Gamut"),
+      inputTransfer: headerValue("Input-Transfer"),
+      outputGamut: headerValue("Output-Gamut"),
+      outputTransfer: headerValue("Output-Transfer"),
     };
     try {
       let parsed;
@@ -750,10 +775,14 @@ for (const { collectionId, collection, file } of selectedSources) {
       }
       meta.id = stableId(sourceHeader, parsed, sourceSha);
       const id = meta.id;
-      const [inputGamut, inputTransfer] = meta.input
+      const [derivedInputGamut, derivedInputTransfer] = meta.input
         ? colorParts(meta.input) : descriptorParts(parsed.inputDescriptor);
-      const [outputGamut, outputTransfer] = meta.output
+      const [derivedOutputGamut, derivedOutputTransfer] = meta.output
         ? colorParts(meta.output) : descriptorParts(parsed.outputDescriptor);
+      const inputGamut = meta.inputGamut || derivedInputGamut;
+      const inputTransfer = meta.inputTransfer || derivedInputTransfer;
+      const outputGamut = meta.outputGamut || derivedOutputGamut;
+      const outputTransfer = meta.outputTransfer || derivedOutputTransfer;
       const warning = joinWarnings(
         sourceFormat === "CLF"
           ? "A sampled 3D CUBE is bounded to DOMAIN_MIN/MAX 0..1 and cannot preserve CLF values outside its input domain."
@@ -767,12 +796,12 @@ for (const { collectionId, collection, file } of selectedSources) {
       expected.add(path.basename(outputFile));
       manifestById.set(id, {
         id, title, collection: collection.name, collectionId,
-        transformClass: collection.transformClass, format: "CUBE",
+        transformClass: meta.transformClass, format: "CUBE",
         source: sourceUrl, assetUrl: meta.assetUrl || null,
         author: meta.author || null, authorUrl: meta.authorUrl || null,
         retrieved: meta.retrieved, license, licenseUrl, licenseBasis: meta.licenseBasis,
         attribution: meta.attribution || null, tags,
-        sourceFile: relativeSource, sourceFormat, sourceSha256: meta.sourceSha,
+        sourceFile: relativeSource, sourceFormat: meta.sourceFormat, sourceSha256: meta.sourceSha,
         clientLut: `assets/luts/${id}.cube`, clientLutSize: parsed.size,
         cubeKind: parsed.kind, size: parsed.size, inputColorSpace: meta.input || null,
         outputColorSpace: meta.output || null, colorSpaceConfidence: meta.confidence,
@@ -782,6 +811,8 @@ for (const { collectionId, collection, file } of selectedSources) {
         conversionGrid: `${parsed.size}x${parsed.size}x${parsed.size}`,
         conversionInterpolation: parsed.interpolation || "none",
         conversionMethod: method, conversionWarning: warning || null,
+        sourceLabels: meta.sourceLabels || null,
+        duplicateAssets: meta.duplicateAssets || null,
         upstreamId: parsed.upstreamId || null,
         inputDescriptor: parsed.inputDescriptor || null,
         outputDescriptor: parsed.outputDescriptor || null,

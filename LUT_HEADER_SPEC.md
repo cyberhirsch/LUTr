@@ -16,7 +16,7 @@ are ignored by the pipeline are worse than no field at all.
 ## 1. Where the header sits in the pipeline
 
 ```
-submissions/**             upstream assets (CUBE, 3DL, CLF, Hald PNG/TIF)
+submissions/** or submissions-raw/**   upstream assets (CUBE, 3DL, CLF, Hald PNG/TIF)
    │
    ├─ scripts/convert-all-to-cube.mjs
    │     writes → site/assets/luts/<id>.cube      (canonical CUBE + this header)
@@ -120,9 +120,9 @@ Legend — **Req**: ✔ required, ○ optional. **Consumer**: what reads it toda
 | Field | Req | Consumer | Notes |
 |---|---|---|---|
 | `Source` | ✔ | viewer "Open source" | Collection or repository homepage. |
-| `Asset-URL` | ○ | viewer | *needs code.* Per-item permalink. Required for per-item sources (e.g. a community site); omit for monolithic repos. |
-| `Author` | ○ | catalog | *needs code.* Required whenever authorship is per-item rather than per-collection. |
-| `Author-URL` | ○ | catalog | *needs code.* |
+| `Asset-URL` | ○ | viewer source link | Per-item permalink. Required for per-item sources (e.g. a community site); omit for monolithic repos. |
+| `Author` | ○ | catalog → viewer | Required whenever authorship is per-item rather than per-collection. |
+| `Author-URL` | ○ | catalog | |
 | `Retrieved` | ✔ | audit | ISO 8601 date the upstream file was fetched. |
 | `Source-File` | ✔ | audit | Repo-relative path of the **original**, pre-conversion asset. |
 | `Source-Format` | ✔ | audit | `CUBE` \| `3DL` \| `CLF` \| `CSP` \| `HALD-PNG` \| `HALD-TIF`. |
@@ -134,7 +134,7 @@ Legend — **Req**: ✔ required, ○ optional. **Consumer**: what reads it toda
 |---|---|---|---|
 | `License` | ✔ | catalog → facet, sort | SPDX identifier where one exists. |
 | `License-URL` | ✔ | catalog | |
-| `License-Basis` | ✔ | *needs code* | How the license was established. See §5. |
+| `License-Basis` | ✔ | catalog → viewer | How the license was established. See §5. |
 | `Attribution` | ○ | viewer | Credit line, carried even where the license does not require it. |
 
 ### 3.4 Classification
@@ -144,6 +144,7 @@ Legend — **Req**: ✔ required, ○ optional. **Consumer**: what reads it toda
 | `Transform-Class` | ✔ | facet | One of `creative-look`, `film-emulation`, `camera-transform`, `display-transform`, `color-space-conversion`, `tone-map`, `accessibility`. |
 | `Tags` | ✔ | facet, search | Comma-separated, lowercase, hyphenated. |
 | `Source-Labels` | ○ | remapping | Verbatim upstream facet strings, unmapped. See §6. |
+| `Duplicate-Assets` | ○ | importer → manifest → viewer | Semicolon-separated `upstream-id:asset-url` records collapsed into this transform after numeric-sample comparison. Documentary; the canonical asset remains authoritative. |
 
 ### 3.5 Color pipeline — the authoritative block
 
@@ -152,11 +153,11 @@ This is the block the renderer depends on. Getting it wrong costs a preview.
 | Field | Req | Consumer | Notes |
 |---|---|---|---|
 | `Input-Color-Space` | ✔ | **renderer** | An id from `COLOR_SPACES`, or empty. **Never prose.** See §7. |
-| `Input-Gamut` | ✔ | *needs code* | An id, or `unspecified`. See §8. |
-| `Input-Transfer` | ✔ | *needs code* | A transfer id, or `unspecified`. See §8. |
+| `Input-Gamut` | ✔ | manifest → viewer | An id, or `unspecified`. See §8. |
+| `Input-Transfer` | ✔ | manifest → viewer | A transfer id, or `unspecified`. See §8. |
 | `Output-Color-Space` | ✔ | **renderer** | As above. |
-| `Output-Gamut` | ✔ | *needs code* | |
-| `Output-Transfer` | ✔ | *needs code* | |
+| `Output-Gamut` | ✔ | manifest → viewer | |
+| `Output-Transfer` | ✔ | manifest → viewer | |
 | `Color-Space-Confidence` | ✔ | badge | See §5. |
 | `Domain-Normalized` | ✔ | audit | `true` \| `false`. See §9. |
 | `Shaper` | ✔ | audit | `none`, or a description of the input shaper/prelut baked in. |

@@ -7,6 +7,12 @@ reference-images/**
 submissions/**
 !submissions/README.md
 
+# Raw crawl captures and any asset whose upstream file asserts rights that
+# contradict its declared license. Quarantined assets must never reach the
+# public repository or the Pages artifact.
+submissions-raw/**
+submissions-quarantine/**
+
 # Local render logs and operating-system files.
 render-previews.out.log
 render-previews.err.log
