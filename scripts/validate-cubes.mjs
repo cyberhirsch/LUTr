@@ -9,8 +9,11 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, "site", "data", "cub
 const submissionsDir = path.join(root, "submissions");
 const rawSubmissionsDir = path.join(root, "submissions-raw");
 const sourceRoots = [submissionsDir, rawSubmissionsDir];
-const sourceLibraryAvailable = sourceRoots.some((dir) => fs.existsSync(dir)
-  && fs.readdirSync(dir, { withFileTypes: true }).some((entry) => entry.isDirectory()));
+const sourceRootAvailability = new Map(sourceRoots.map((dir) => [
+  dir,
+  fs.existsSync(dir) && fs.readdirSync(dir, { withFileTypes: true }).some((entry) => entry.isDirectory()),
+]));
+const sourceLibraryAvailable = [...sourceRootAvailability.values()].some(Boolean);
 const files = fs.readdirSync(lutDir);
 const cubeFiles = files.filter((file) => path.extname(file).toLowerCase() === ".cube");
 const failures = [];
@@ -120,7 +123,7 @@ for (const file of cubeFiles) {
     if (sha256(fs.readFileSync(sourcePath)) !== header.get("Source-SHA256")) {
       failures.push(`${file}: Source-SHA256 does not match original`);
     }
-  } else if (fs.existsSync(matchingRoot)) {
+  } else if (sourceRootAvailability.get(matchingRoot)) {
     failures.push(`${file}: Source-File does not resolve`);
   } else {
     sourceHashesSkipped += 1;
