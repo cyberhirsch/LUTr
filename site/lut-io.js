@@ -2,6 +2,21 @@ import { convertColor, colorSpaceLabel } from "./color-spaces.js";
 
 const clamp = (value, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));
 
+// Canonical CUBEs are stored gzip-compressed (site/assets/luts/<id>.cube.gz)
+// to fit GitHub Pages' size budget. This is the single fetch path every
+// consumer -- the renderer, the viewer download, the compare dialog -- goes
+// through, so the decompression logic exists exactly once.
+export async function fetchCubeText(url) {
+  const gzUrl = `${url}.gz`;
+  const response = await fetch(gzUrl);
+  if (!response.ok) throw new Error(`Unable to load ${gzUrl} (${response.status})`);
+  if (!response.body || typeof DecompressionStream === "undefined") {
+    throw new Error("This browser does not support streaming gzip decompression");
+  }
+  const stream = response.body.pipeThrough(new DecompressionStream("gzip"));
+  return new Response(stream).text();
+}
+
 export function parseLutrHeader(text) {
   const metadata = {};
   for (const line of text.replace(/^\uFEFF/, "").split(/\r?\n/)) {

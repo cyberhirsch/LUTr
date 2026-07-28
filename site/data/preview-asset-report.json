@@ -1,0 +1,12 @@
+{
+  "total": 1170,
+  "gzipWritten": 0,
+  "gzipSkipped": 1170,
+  "atlasWritten": 1170,
+  "atlasSkipped": 0,
+  "failed": 0,
+  "failures": [],
+  "plaintextBytes": 896977879,
+  "gzipBytes": 279622451,
+  "atlasBytes": 33159589
+}

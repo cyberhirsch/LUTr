@@ -1,6 +1,6 @@
 import { LutRenderer } from "./lut-renderer.js";
 import { colorSpace, colorSpaceLabel, colorSpaceOptions } from "./color-spaces.js";
-import { composeCube, downloadText, parseCube } from "./lut-io.js";
+import { composeCube, downloadText, fetchCubeText, parseCube } from "./lut-io.js";
 import { decodeImageFile } from "./image-loader.js";
 
 const state = {
@@ -260,8 +260,8 @@ function metricTag(lut) {
 function card(lut) {
   const image = selectedImage();
   const pipeline = lutPipeline(lut, image);
-  const clientPreview = Boolean(lutRenderer && lut.clientLut && pipelineReady(pipeline));
-  const needsColorSpace = Boolean(lut.clientLut && !pipelineReady(pipeline));
+  const clientPreview = Boolean(lutRenderer && lut.previewAtlas && pipelineReady(pipeline));
+  const needsColorSpace = Boolean(lut.previewAtlas && !pipelineReady(pipeline));
   const tags = [...new Set([metricTag(lut), ...lut.tags])].filter(Boolean).slice(0, 3);
   const selected = state.compare.includes(lut.id);
   return `<article class="lut-card" data-lut="${lut.id}">
@@ -301,9 +301,9 @@ async function renderClientThumbnails(luts, generation) {
   for (const lut of luts) {
     if (generation !== catalogRenderGeneration || selectedImage().id !== image.id) return;
     const canvas = els.lutGrid.querySelector(`[data-client-preview="${CSS.escape(lut.id)}"]`);
-    if (!canvas || !lut.clientLut) continue;
+    if (!canvas || !lut.previewAtlas) continue;
     try {
-      await lutRenderer.render(source, `./${lut.clientLut}`, lut.clientLutSize, canvas, 480, lutPipeline(lut, image));
+      await lutRenderer.renderAtlas(source, `./${lut.previewAtlas}`, lut.previewAtlasSize, canvas, 480, lutPipeline(lut, image));
     } catch {
       const message = document.createElement("span");
       message.className = "no-preview";
@@ -471,9 +471,8 @@ async function downloadCatalogLut() {
   els.downloadConvertedLut.disabled = true;
   els.downloadConvertedLut.textContent = "Building 33³ CUBE…";
   try {
-    const response = await fetch(`./${lut.clientLut}`);
-    if (!response.ok) throw new Error(`Unable to load canonical CUBE (${response.status})`);
-    const data = parseCube(await response.text(), lut.title);
+    const text = await fetchCubeText(`./${lut.clientLut}`);
+    const data = parseCube(text, lut.title);
     data.title = lut.title;
     const cube = composeCube({
       lut: data,
@@ -523,10 +522,10 @@ async function openCompareDialog() {
   if (!lutRenderer) return;
   for (const lut of luts) {
     const pipeline = lutPipeline(lut, image);
-    if (!lut.clientLut || !pipelineReady(pipeline)) continue;
+    if (!lut.previewAtlas || !pipelineReady(pipeline)) continue;
     const canvas = els.compareGrid.querySelector(`[data-compare-preview="${CSS.escape(lut.id)}"]`);
     try {
-      await lutRenderer.render(image.id === "upload" ? image.element : `./${image.proxy}`, `./${lut.clientLut}`, lut.clientLutSize, canvas, 800, pipeline);
+      await lutRenderer.renderAtlas(image.id === "upload" ? image.element : `./${image.proxy}`, `./${lut.previewAtlas}`, lut.previewAtlasSize, canvas, 800, pipeline);
       canvas.hidden = false;
       canvas.previousElementSibling.hidden = true;
     } catch {}

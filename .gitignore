@@ -13,6 +13,14 @@ submissions/**
 submissions-raw/**
 submissions-quarantine/**
 
+# Canonical LUTs are stored gzip-compressed to fit GitHub Pages' size and
+# bandwidth budget (a plain-text .cube catalog exceeds the 1 GB Pages limit).
+# The plaintext .cube is a local build artifact regenerated from
+# submissions/** by scripts/convert-all-to-cube.mjs and read by
+# scripts/build-preview-assets.mjs; it must never be tracked or deployed --
+# only the compressed .cube.gz ships.
+site/assets/luts/*.cube
+
 # Local render logs and operating-system files.
 render-previews.out.log
 render-previews.err.log

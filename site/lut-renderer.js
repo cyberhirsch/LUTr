@@ -1,5 +1,5 @@
 import { colorSpace, conversionMatrix, glMatrix } from "./color-spaces.js";
-import { parseCube, sampleLut } from "./lut-io.js";
+import { fetchCubeText, parseCube, sampleLut } from "./lut-io.js";
 
 const vertexSource = `#version 300 es
 in vec2 position;
@@ -179,9 +179,8 @@ function loadImage(url) {
 }
 
 async function loadCube(url) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Unable to load ${url} (${response.status})`);
-  const lut = parseCube(await response.text(), url.split("/").at(-1));
+  const text = await fetchCubeText(url);
+  const lut = parseCube(text, url.split("/").at(-1));
   const renderLut = lut.kind === "1D" ? (() => {
     const size = 33;
     const values = [];
@@ -225,6 +224,7 @@ export class LutRenderer {
     this.lutTexture = gl.createTexture();
     this.cache = new Map();
     this.lutCache = new Map();
+    this.atlasCache = new Map();
     gl.useProgram(program);
     const position = gl.getAttribLocation(program, "position");
     const buffer = gl.createBuffer();
@@ -246,10 +246,32 @@ export class LutRenderer {
     return this.lutCache.get(url);
   }
 
+  atlasImage(url) {
+    if (!this.atlasCache.has(url)) this.atlasCache.set(url, loadImage(url));
+    return this.atlasCache.get(url);
+  }
+
   async render(source, lutUrl, lutSize, target, maxWidth = 1600, options = {}) {
     const sourceImage = typeof source === "string" ? await this.image(source) : source;
     const lut = await this.lut(lutUrl);
     return this.renderPrepared(sourceImage, lut, lut.size, target, maxWidth, options);
+  }
+
+  // Card thumbnails and the compare grid render from a pre-baked 8-bit PNG
+  // atlas instead of the full-precision cube: one native image decode, no
+  // CUBE fetch/parse/float-upload per card. The viewer and download paths
+  // keep calling render() against the canonical cube, so precision is never
+  // lost anywhere it would be visible or would affect an exported file.
+  async renderAtlas(source, atlasUrl, atlasSize, target, maxWidth = 1600, options = {}) {
+    const sourceImage = typeof source === "string" ? await this.image(source) : source;
+    const atlasImage = await this.atlasImage(atlasUrl);
+    const lut = {
+      size: atlasSize,
+      image: atlasImage,
+      width: atlasImage.naturalWidth || atlasImage.width,
+      height: atlasImage.naturalHeight || atlasImage.height,
+    };
+    return this.renderPrepared(sourceImage, lut, atlasSize, target, maxWidth, options);
   }
 
   async renderIdentity(source, target, maxWidth = 1600, options = {}) {
@@ -298,7 +320,15 @@ export class LutRenderer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, lut.width, lut.height, 0, gl.RGBA, gl.FLOAT, lut.pixels);
+      if (lut.image) {
+        // 8-bit preview atlas: native image decode straight to a texture, no
+        // JS-side pixel unpacking. Deliberately lower precision than the
+        // cube path -- fine for a thumbnail, never used for the viewer or
+        // for a download.
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, lut.image);
+      } else {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, lut.width, lut.height, 0, gl.RGBA, gl.FLOAT, lut.pixels);
+      }
     }
     gl.uniform1i(gl.getUniformLocation(this.program, "lutSize"), lutSize);
     gl.uniform1i(gl.getUniformLocation(this.program, "atlasWidth"), lut?.width || 1);

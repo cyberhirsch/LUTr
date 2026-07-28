@@ -1,10 +1,13 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import zlib from "node:zlib";
 import { parseCube } from "../site/lut-io.js";
 
 const root = process.cwd();
-const lutDir = path.join(root, "site", "assets", "luts");
+const siteDir = path.join(root, "site");
+const lutDir = path.join(siteDir, "assets", "luts");
+const atlasDir = path.join(siteDir, "assets", "atlas");
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "site", "data", "cube-manifest.json"), "utf8"));
 const submissionsDir = path.join(root, "submissions");
 const rawSubmissionsDir = path.join(root, "submissions-raw");
@@ -15,7 +18,13 @@ const sourceRootAvailability = new Map(sourceRoots.map((dir) => [
 ]));
 const sourceLibraryAvailable = [...sourceRootAvailability.values()].some(Boolean);
 const files = fs.readdirSync(lutDir);
-const cubeFiles = files.filter((file) => path.extname(file).toLowerCase() === ".cube");
+// Canonical CUBEs ship gzip-compressed (site/assets/luts/<id>.cube.gz); the
+// plaintext .cube some of these entries also have on disk is a local build
+// artifact (gitignored, produced by convert-all-to-cube.mjs /
+// build-preview-assets.mjs) and is neither required nor validated here --
+// only its presence would be a bug in .gitignore, not something this script
+// can detect from inside a checkout where it's legitimately absent.
+const cubeFiles = files.filter((file) => file.toLowerCase().endsWith(".cube.gz"));
 const failures = [];
 const required = [
   "Schema-Version", "ID", "Title", "Collection", "Collection-ID",
@@ -80,15 +89,31 @@ function sha256(data) {
 }
 
 for (const file of files) {
-  if (path.extname(file).toLowerCase() !== ".cube") failures.push(`${file}: hosted LUT is not CUBE`);
+  const lower = file.toLowerCase();
+  // A plaintext "<id>.cube" alongside its "<id>.cube.gz" is the expected,
+  // gitignored local build artifact -- allowed, but not itself validated
+  // (the .gz is what's tracked and deployed, and what every check below
+  // actually inspects). Anything that is neither is unexpected.
+  if (!lower.endsWith(".cube.gz") && !lower.endsWith(".cube")) {
+    failures.push(`${file}: unexpected file in site/assets/luts (expected .cube.gz)`);
+  }
 }
 
 for (const file of cubeFiles) {
+  const idFile = file.replace(/\.gz$/i, ""); // e.g. "<id>.cube", used for header/manifest filename comparisons
   const fullPath = path.join(lutDir, file);
-  const buffer = fs.readFileSync(fullPath);
+  const gzBuffer = fs.readFileSync(fullPath);
+  if (gzBuffer[0] !== 0x1f || gzBuffer[1] !== 0x8b) failures.push(`${file}: not a valid gzip stream (bad magic bytes)`);
+  let buffer;
+  try {
+    buffer = zlib.gunzipSync(gzBuffer);
+  } catch (error) {
+    failures.push(`${file}: failed to gunzip (${error.message})`);
+    continue;
+  }
   const text = buffer.toString("utf8");
   const header = parseHeader(text);
-  const manifestEntry = manifestByFile.get(file);
+  const manifestEntry = manifestByFile.get(idFile);
   if (buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) failures.push(`${file}: UTF-8 BOM is forbidden`);
   if (text.includes("\r")) failures.push(`${file}: line endings must be LF`);
   if (!text.startsWith("# LUTr-Schema-Version: 2\n")) failures.push(`${file}: Schema-Version 2 must be the first LUTr line`);
@@ -104,7 +129,7 @@ for (const file of cubeFiles) {
   if (!validInterpolation.has(header.get("Conversion-Interpolation"))) failures.push(`${file}: invalid Conversion-Interpolation`);
   if (header.get("Domain-Normalized") !== "true") failures.push(`${file}: domain is not normalized`);
   if (!/^[a-z0-9][a-z0-9._-]*$/.test(header.get("ID") || "")) failures.push(`${file}: ID is not URL-safe`);
-  if (`${header.get("ID")}.cube` !== file) failures.push(`${file}: filename does not match header ID`);
+  if (`${header.get("ID")}.cube` !== idFile) failures.push(`${file}: filename does not match header ID`);
   if (!manifestEntry) {
     failures.push(`${file}: missing manifest entry`);
   } else {
@@ -163,16 +188,27 @@ if (manifest.schemaVersion !== 2) failures.push(`manifest schema is ${manifest.s
 if (manifest.failures?.length) failures.push(`manifest records ${manifest.failures.length} conversion failures`);
 if (cubeFiles.length !== manifest.total) failures.push(`${cubeFiles.length} files != ${manifest.total} manifest records`);
 if (ids.size !== manifest.total) failures.push(`${ids.size} unique IDs != ${manifest.total} manifest records`);
+let atlasesVerified = 0;
 for (const lut of manifest.luts) {
   sourceFormats[lut.sourceFormat] = (sourceFormats[lut.sourceFormat] || 0) + 1;
-  const file = path.join(root, "site", ...lut.clientLut.split("/"));
-  if (!fs.existsSync(file)) failures.push(`missing ${lut.clientLut}`);
+  // The plaintext .cube (lut.clientLut) is a gitignored local build artifact
+  // and is expected to be absent from a checkout; only the deployed .gz is
+  // required to exist.
+  const gzFile = path.join(root, "site", ...lut.clientLut.split("/")) + ".gz";
+  if (!fs.existsSync(gzFile)) failures.push(`missing ${lut.clientLut}.gz`);
+  if (lut.previewAtlas) {
+    const atlasFile = path.join(root, "site", ...lut.previewAtlas.split("/"));
+    if (!fs.existsSync(atlasFile)) failures.push(`missing ${lut.previewAtlas}`);
+    else atlasesVerified += 1;
+  } else {
+    failures.push(`${lut.id}: missing previewAtlas`);
+  }
 }
 
 console.log(JSON.stringify({
   schemaVersion: manifest.schemaVersion,
   sourceLibraryAvailable, sourceHashesVerified, sourceHashesSkipped,
-  files: cubeFiles.length, rows, kinds, sizes, sourceFormats,
+  files: cubeFiles.length, rows, kinds, sizes, sourceFormats, atlasesVerified,
   failures: failures.length, failureDetails: failures.slice(0, 30),
 }, null, 2));
 if (failures.length) process.exitCode = 1;
