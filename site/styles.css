@@ -11,11 +11,13 @@
   --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --sans: Inter, "Segoe UI", Arial, system-ui, sans-serif;
   --radius: 18px;
+  --topbar-height: 72px;
+  --anchor-gap: 16px;
 }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--topbar-height) + var(--anchor-gap)); }
 body { margin: 0; background: var(--ink); color: var(--paper); font-family: var(--sans); }
 button, input, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
@@ -24,7 +26,7 @@ img { display: block; max-width: 100%; }
 
 .skip-link { position: fixed; z-index: 99; left: 1rem; top: -5rem; padding: .8rem 1rem; background: var(--acid); color: var(--ink); }
 .skip-link:focus { top: 1rem; }
-.topbar { height: 72px; padding: 0 clamp(1rem, 3vw, 3rem); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--ink) 88%, transparent); backdrop-filter: blur(18px); }
+.topbar { height: var(--topbar-height); padding: 0 clamp(1rem, 3vw, 3rem); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--ink) 88%, transparent); backdrop-filter: blur(18px); }
 .brand { display: inline-flex; align-items: center; gap: .7rem; text-decoration: none; font-weight: 700; font-size: 1.15rem; }
 .brand-mark { width: 31px; aspect-ratio: 1; display: grid; place-items: center; background: var(--acid); color: var(--ink); border-radius: 50%; font-family: var(--mono); }
 .brand-name { display: flex; flex-direction: column; line-height: 1; }
@@ -230,7 +232,7 @@ footer p:nth-child(2) { margin-right: auto; }
 }
 
 @media (max-width: 620px) {
-  .topbar { height: 60px; }
+  :root { --topbar-height: 60px; --anchor-gap: 12px; }
   .github-link { font-size: .7rem; }
   .hero { padding-top: 4rem; }
   h1 { font-size: 3.5rem; }
