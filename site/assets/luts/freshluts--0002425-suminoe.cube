@@ -12,14 +12,14 @@
 # LUTr-License-URL: https://freshluts.com/termsandconditions
 # LUTr-License-Basis: site-terms
 # LUTr-Transform-Class: creative-look
-# LUTr-Tags: creative, freshluts, community, cube, warm
-# LUTr-Input-Color-Space:
-# LUTr-Input-Gamut: unspecified
-# LUTr-Input-Transfer: unspecified
+# LUTr-Tags: creative, freshluts, community, cube, warm, rec709, assumed-input
+# LUTr-Input-Color-Space: rec709
+# LUTr-Input-Gamut: rec709
+# LUTr-Input-Transfer: rec709
 # LUTr-Output-Color-Space: srgb
 # LUTr-Output-Gamut: rec709
 # LUTr-Output-Transfer: srgb
-# LUTr-Color-Space-Confidence: camera-profile-input-required
+# LUTr-Color-Space-Confidence: assumed-display-referred
 # LUTr-Domain-Normalized: true
 # LUTr-Shaper: none
 # LUTr-Original-Grid: 32x32x32
@@ -32,7 +32,8 @@
 # LUTr-Author: Gina
 # LUTr-Author-URL: https://freshluts.com/users/90727
 # LUTr-Attribution: Gina via Fresh LUTs
-# LUTr-Source-Labels: gamma=Other; color=Warm; key=Neutral; style=NEUTRAL
+# LUTr-Source-Labels: gamma=Other; color=Warm; key=Neutral; style=NEUTRAL; LUTr assumption=input Rec.709 per repository policy
+# LUTr-Conversion-Warning: Input Rec.709 is a LUTr catalog assumption requested for this otherwise unspecified Fresh LUT; it is not verified by the upstream asset.
 # LUTr-Note: Preserve this metadata and the upstream license notices when redistributing.
 # LUTr-Upstream-Comment: LUT by SparkleStock. Enhanced with VOXCOLOR algorithms.
 

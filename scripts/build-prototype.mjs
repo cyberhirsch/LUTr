@@ -9,7 +9,6 @@ fs.mkdirSync(dataDir, { recursive: true });
 
 const collections = {
   "stripedpurple-color-grading-luts": ["Striped Purple", "MIT", "creative-look", ["creative", "stylized"]],
-  "ircgraphic-d-cinelike-blockbuster": ["DJI Blockbuster", "CC0-1.0", "creative-look", ["creative", "camera", "dji", "cinematic"]],
   "jonmatifa-a6000-luts": ["Sony a6000", "CC0-1.0", "camera-transform", ["camera", "sony", "log"]],
   "christophwurst-haldclut": ["ChristophWurst Hald", "CC-BY-SA-4.0", "creative-look", ["creative", "hald-clut"]],
   "sguyader-filmsim": ["FilmSim", "CC0-1.0", "film-emulation", ["film", "film-emulation", "hald-clut"]],

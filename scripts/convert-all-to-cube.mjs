@@ -43,12 +43,6 @@ const collections = {
     transformClass: "creative-look", tags: ["creative", "stylized", "color-grading"],
     input: "srgb", output: "srgb", confidence: "assumed-display-referred", licenseBasis: "repo-license-file",
   },
-  "ircgraphic-d-cinelike-blockbuster": {
-    name: "DJI Blockbuster", source: "https://github.com/IRCGraphic/D-Cinelike-and-Normal-Blockbuster-LUTs",
-    license: "CC0-1.0", licenseUrl: "https://github.com/IRCGraphic/D-Cinelike-and-Normal-Blockbuster-LUTs/blob/main/LICENSE",
-    transformClass: "creative-look", tags: ["creative", "camera", "dji", "d-cinelike", "cinematic"],
-    input: null, output: "srgb", confidence: "camera-profile-input-required", licenseBasis: "repo-license-file",
-  },
   "jonmatifa-a6000-luts": {
     name: "Sony a6000", source: "https://github.com/jonmatifa/a6000-LUTs",
     license: "CC0-1.0", licenseUrl: "https://github.com/jonmatifa/a6000-LUTs/blob/master/LICENSE",
@@ -113,7 +107,7 @@ const collections = {
     name: "Fresh LUTs", source: "https://freshluts.com",
     license: "CC0-1.0", licenseUrl: "https://freshluts.com/termsandconditions",
     transformClass: "creative-look", tags: ["creative", "freshluts", "community"],
-    input: null, output: "srgb", confidence: "camera-profile-input-required", licenseBasis: "site-terms",
+    input: "rec709", output: "srgb", confidence: "assumed-display-referred", licenseBasis: "site-terms",
   },
 };
 
@@ -141,18 +135,6 @@ const researchedOverrides = new Map(Object.entries({
     sourceLabels: "input=Sony a6000 Portrait picture profile, contrast -3, saturation -3, sharpness -3; output=S-Log3 emulation generated from color-card footage in DaVinci Resolve",
     addTags: ["portrait-profile", "s-log3", "emulation", "color-card"],
     conversionWarning: "The upstream project does not declare input or output chromaticities; the S-Log3 result is an emulation, not a verified Sony color-space conversion.",
-  },
-  "submissions/jonmatifa-a6000-luts/a6000 vivid_1.C0006.cube": {
-    title: "Sony a6000 Portrait -3 to Vivid Look",
-    transformClass: "creative-look",
-    inputGamut: "unspecified",
-    inputTransfer: "sony-a6000-portrait-minus3-custom",
-    outputGamut: "unspecified",
-    outputTransfer: "display-referred-unspecified",
-    confidence: "descriptor-only",
-    sourceLabels: "input=Sony a6000 Portrait picture profile, contrast -3, saturation -3, sharpness -3; output=lightly modified film-emulation look with increased saturation",
-    addTags: ["creative", "portrait-profile", "vivid", "film-emulation", "high-saturation"],
-    conversionWarning: "The upstream project does not declare output transfer characteristics or chromaticities; treat this as a creative look for its custom a6000 input profile.",
   },
   "submissions/sverit-hdr2sdr-luts/HDR2SDR_01_DRG.cube": {
     sourceLabels: "purpose=HDR screenshot to reasonable SDR levels; preset=01 DRG; operation=level compression plus saturation increase",
@@ -984,14 +966,20 @@ for (const { collectionId, collection, file } of selectedSources) {
     const sourceHeader = parseLutrHeader(sourceText);
     const headerValue = (name, fallback = "") => sourceHeader.has(name) ? sourceHeader.get(name) : fallback;
     const researched = researchedOverrides.get(localRelativeSource) || {};
+    const assumeFreshRec709 = collectionId === "freshluts-community"
+      && !normalizedColorSpace(headerValue("Input-Color-Space"));
     const title = researched.title || headerValue("Title", cleanTitle(file, sourceText));
-    const input = normalizedColorSpace(researched.input ?? headerValue("Input-Color-Space", collection.input));
+    const input = normalizedColorSpace(researched.input
+      ?? (assumeFreshRec709 ? collection.input : headerValue("Input-Color-Space", collection.input)));
     const output = normalizedColorSpace(researched.output ?? headerValue("Output-Color-Space", collection.output));
     const sourceUrl = headerValue("Source", sidecar.source || collection.source);
     const license = headerValue("License", sidecar.license || collection.license).replace(/\.$/, "");
     const licenseUrl = headerValue("License-URL", sidecar.licenseUrl || collection.licenseUrl);
     const embeddedTags = headerValue("Tags").split(",").map((value) => value.trim()).filter(Boolean);
-    const tags = [...new Set([...collection.tags, ...embeddedTags, ...(sidecar.tags || []), ...filenameTags(title), ...(researched.addTags || []), "cube"])];
+    const tags = [...new Set([
+      ...collection.tags, ...embeddedTags, ...(sidecar.tags || []), ...filenameTags(title),
+      ...(researched.addTags || []), ...(assumeFreshRec709 ? ["rec709", "assumed-input"] : []), "cube",
+    ])];
     const relativeSource = headerValue("Source-File", localRelativeSource);
     const sourceSha = headerValue("Source-SHA256", sha256(sourceBuffer));
     const preservedSourceFormat = headerValue("Source-Format", sourceFormat);
@@ -999,7 +987,8 @@ for (const { collectionId, collection, file } of selectedSources) {
       title, collection, collectionId, relativeSource, sourceFormat: preservedSourceFormat,
       sourceSha, source: sourceUrl, license, licenseUrl, tags, input, output,
       transformClass: researched.transformClass || headerValue("Transform-Class", collection.transformClass),
-      confidence: researched.confidence || headerValue("Color-Space-Confidence", collection.confidence),
+      confidence: researched.confidence || (assumeFreshRec709
+        ? collection.confidence : headerValue("Color-Space-Confidence", collection.confidence)),
       retrieved: headerValue("Retrieved", sidecar.retrieved || retrievedDate),
       conversionDate: headerValue("Conversion-Date", retrievedDate),
       licenseBasis: headerValue("License-Basis", sidecar.licenseBasis || collection.licenseBasis),
@@ -1007,13 +996,18 @@ for (const { collectionId, collection, file } of selectedSources) {
       author: headerValue("Author", sidecar.author),
       authorUrl: headerValue("Author-URL", sidecar.authorUrl),
       attribution: headerValue("Attribution", sidecar.attribution),
-      sourceLabels: researched.sourceLabels || headerValue("Source-Labels"),
+      sourceLabels: researched.sourceLabels || [
+        headerValue("Source-Labels"),
+        assumeFreshRec709 ? "LUTr assumption=input Rec.709 per repository policy" : "",
+      ].filter(Boolean).join("; "),
       duplicateAssets: headerValue("Duplicate-Assets"),
-      inputGamut: researched.inputGamut || headerValue("Input-Gamut"),
-      inputTransfer: researched.inputTransfer || headerValue("Input-Transfer"),
+      inputGamut: researched.inputGamut || (assumeFreshRec709 ? "" : headerValue("Input-Gamut")),
+      inputTransfer: researched.inputTransfer || (assumeFreshRec709 ? "" : headerValue("Input-Transfer")),
       outputGamut: researched.outputGamut || headerValue("Output-Gamut"),
       outputTransfer: researched.outputTransfer || headerValue("Output-Transfer"),
-      conversionWarning: researched.conversionWarning || null,
+      conversionWarning: researched.conversionWarning || (assumeFreshRec709
+        ? "Input Rec.709 is a LUTr catalog assumption requested for this otherwise unspecified Fresh LUT; it is not verified by the upstream asset."
+        : null),
     };
     try {
       let parsed;

@@ -116,7 +116,7 @@ The upstream README declares a custom input: the a6000 Portrait picture profile 
 - Evidence: upstream calls it a lightly modified film-emulation LUT with heightened saturation.
 - Result: a creative look for the custom a6000 Portrait −3/−3/−3 input.
 - Limitation: output transfer and primaries are not declared.
-- Catalog action: reclassify this one file from camera transform to creative look and replace the generic Resolve title.
+- Catalog action: removed from LUTr on 2026-07-28 rather than retaining an unresolved creative input/output path. This section remains as the historical research record.
 
 ## HDR2SDR tone maps
 

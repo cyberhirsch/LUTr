@@ -12,14 +12,14 @@
 # LUTr-License-URL: https://freshluts.com/termsandconditions
 # LUTr-License-Basis: site-terms
 # LUTr-Transform-Class: creative-look
-# LUTr-Tags: creative, freshluts, community, cube, film-emulation, magenta
-# LUTr-Input-Color-Space:
-# LUTr-Input-Gamut: red-wide-gamut-rgb
-# LUTr-Input-Transfer: unspecified
+# LUTr-Tags: creative, freshluts, community, cube, film-emulation, magenta, rec709, assumed-input
+# LUTr-Input-Color-Space: rec709
+# LUTr-Input-Gamut: rec709
+# LUTr-Input-Transfer: rec709
 # LUTr-Output-Color-Space: srgb
 # LUTr-Output-Gamut: rec709
 # LUTr-Output-Transfer: srgb
-# LUTr-Color-Space-Confidence: camera-profile-input-required
+# LUTr-Color-Space-Confidence: assumed-display-referred
 # LUTr-Domain-Normalized: true
 # LUTr-Shaper: none
 # LUTr-Original-Grid: 33x33x33
@@ -32,7 +32,8 @@
 # LUTr-Author: Alex Jordan
 # LUTr-Author-URL: https://freshluts.com/users/1
 # LUTr-Attribution: Alex Jordan via Fresh LUTs
-# LUTr-Source-Labels: gamma=RED Color; color=Magenta; key=Neutral; style=Film emulation
+# LUTr-Source-Labels: gamma=RED Color; color=Magenta; key=Neutral; style=Film emulation; LUTr assumption=input Rec.709 per repository policy
+# LUTr-Conversion-Warning: Input Rec.709 is a LUTr catalog assumption requested for this otherwise unspecified Fresh LUT; it is not verified by the upstream asset.
 # LUTr-Note: Preserve this metadata and the upstream license notices when redistributing.
 
 TITLE "Magenta Dream"

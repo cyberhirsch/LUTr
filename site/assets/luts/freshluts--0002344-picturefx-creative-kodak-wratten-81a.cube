@@ -12,14 +12,14 @@
 # LUTr-License-URL: https://freshluts.com/termsandconditions
 # LUTr-License-Basis: site-terms
 # LUTr-Transform-Class: creative-look
-# LUTr-Tags: creative, freshluts, community, cube, film-emulation, warm
-# LUTr-Input-Color-Space:
-# LUTr-Input-Gamut: unspecified
-# LUTr-Input-Transfer: unspecified
+# LUTr-Tags: creative, freshluts, community, cube, film-emulation, warm, rec709, assumed-input
+# LUTr-Input-Color-Space: rec709
+# LUTr-Input-Gamut: rec709
+# LUTr-Input-Transfer: rec709
 # LUTr-Output-Color-Space: srgb
 # LUTr-Output-Gamut: rec709
 # LUTr-Output-Transfer: srgb
-# LUTr-Color-Space-Confidence: camera-profile-input-required
+# LUTr-Color-Space-Confidence: assumed-display-referred
 # LUTr-Domain-Normalized: true
 # LUTr-Shaper: none
 # LUTr-Original-Grid: 25x25x25
@@ -32,7 +32,8 @@
 # LUTr-Author: MarcR.
 # LUTr-Author-URL: https://freshluts.com/users/86490
 # LUTr-Attribution: MarcR. via Fresh LUTs
-# LUTr-Source-Labels: gamma=Other; color=Warm; key=Neutral; style=Film emulation
+# LUTr-Source-Labels: gamma=Other; color=Warm; key=Neutral; style=Film emulation; LUTr assumption=input Rec.709 per repository policy
+# LUTr-Conversion-Warning: Input Rec.709 is a LUTr catalog assumption requested for this otherwise unspecified Fresh LUT; it is not verified by the upstream asset.
 # LUTr-Note: Preserve this metadata and the upstream license notices when redistributing.
 # LUTr-Upstream-Comment: Generated with IWLTBAP LUT Generator
 # LUTr-Upstream-Comment: LutCreator: https://marcrphoto.wordpress.com/

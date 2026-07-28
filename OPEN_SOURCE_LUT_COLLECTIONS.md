@@ -17,8 +17,7 @@ that can create or apply LUTs.
 | Collection | Contents and use | Formats / observed assets | License |
 |---|---|---:|---|
 | [Striped Purple Color Grading LUTs](https://github.com/stripedpurple/color-grading-luts) | A large set of original creative grades organized into categories such as Avant Garde. The author says the LUTs were primarily made and tested with Photoshop. | 49 `.cube` | MIT |
-| [DJI D-Cinelike and Normal Blockbuster LUTs](https://github.com/IRCGraphic/D-Cinelike-and-Normal-Blockbuster-LUTs) | Warm “blockbuster” looks made for DJI Action 2 footage, with separate D-Cinelike and Normal-profile variants. The README documents recommended exposure offsets. | 10 `.cube` | CC0-1.0 |
-| [Sony a6000 LUTs](https://github.com/jonmatifa/a6000-LUTs) | Camera-specific transforms made from the Sony a6000 Portrait profile: S-Log2-like, S-Log3-like, and a vivid film-emulation look. | 3 `.cube` | CC0-1.0 |
+| [Sony a6000 LUTs](https://github.com/jonmatifa/a6000-LUTs) | Camera-specific transforms made from the Sony a6000 Portrait profile: S-Log2-like and S-Log3-like emulations. | 2 `.cube` | CC0-1.0 |
 | [ChristophWurst Hald CLUTs](https://github.com/ChristophWurst/haldclut) | Small collection of custom color-grading profiles made for RawTherapee. | 3 `.tif` Hald CLUTs | CC-BY-SA-4.0 |
 | [FilmSim](https://github.com/sguyader/FilmSim) | Film-simulation presets supplied as both Hald CLUT images and RawTherapee processing profiles. | 4 `.tif` Hald CLUTs + 4 `.pp3` | CC0-1.0 |
 | [HDR2SDR LUTs](https://github.com/sverit/HDR2SDR-LUTs) | Several strength variants for compressing HDR screenshots into more reasonable SDR levels while restoring saturation. | 5 `.cube` | GPL-3.0 |
@@ -28,7 +27,7 @@ that can create or apply LUTs.
 | [Arri Alexa LUTs](https://github.com/vfxwiki/ArriAlexaLuts) | A very small technical collection for ARRI Alexa workflows. Documentation is sparse, so test input/output assumptions before production use. | 2 `.cube` | LGPL-3.0 |
 | [Colour-Blind LUTs](https://github.com/andrewwillmott/colour-blind-luts) | Simulation/correction LUTs for protanopia, deuteranopia, and tritanopia. Useful for accessibility testing and real-time shader workflows rather than creative grading. | 13 LUT-like `.png` assets | Unlicense |
 | [OpenColorIO Config for ACES](https://github.com/AcademySoftwareFoundation/OpenColorIO-Config-ACES) | Authoritative, production-oriented ACES transforms for camera inputs and color pipelines. This is a config/transform collection, not a pack of creative looks. | 58 `.clf` transforms observed | BSD-3-Clause |
-| [Fresh LUTs](https://freshluts.com) | Community-uploaded creative and camera-profile looks. The site terms declare uploads CC0; LUTr separately quarantines files with contradictory embedded rights notices and collapses numerically identical transforms. See the [ingestion audit](FRESHLUTS_INGEST.md). | 679 canonical `.cube` transforms hosted from 720 captures | CC0-1.0 (site terms) |
+| [Fresh LUTs](https://freshluts.com) | Community-uploaded creative and camera-profile looks. The site terms declare uploads CC0; LUTr separately quarantines files with contradictory embedded rights notices and collapses numerically identical transforms. For 125 otherwise unspecified creative LUTs, LUTr explicitly assumes Rec.709 input and records that assumption in each hosted CUBE. See the [ingestion audit](FRESHLUTS_INGEST.md). | 679 canonical `.cube` transforms hosted from 720 captures | CC0-1.0 (site terms) |
 
 ## Licensed repositories with provenance caveats
 

@@ -12,13 +12,6 @@ const collections = {
     licenseUrl: "https://github.com/stripedpurple/color-grading-luts/blob/master/LICENSE",
     tags: ["creative", "color-grading", "3d-lut"],
   },
-  "ircgraphic-d-cinelike-blockbuster": {
-    name: "DJI D-Cinelike and Normal Blockbuster LUTs",
-    source: "https://github.com/IRCGraphic/D-Cinelike-and-Normal-Blockbuster-LUTs",
-    license: "CC0-1.0",
-    licenseUrl: "https://github.com/IRCGraphic/D-Cinelike-and-Normal-Blockbuster-LUTs/blob/main/LICENSE",
-    tags: ["creative", "dji", "d-cinelike", "blockbuster", "3d-lut"],
-  },
   "jonmatifa-a6000-luts": {
     name: "Sony a6000 LUTs",
     source: "https://github.com/jonmatifa/a6000-LUTs",
