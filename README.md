@@ -14,12 +14,12 @@ The public site is deployed to GitHub Pages from `site/`.
 node scripts/convert-all-to-cube.mjs
 node scripts/build-prototype.mjs
 node scripts/validate-cubes.mjs
-node scripts/render-prototype-previews.mjs
+  node scripts/render-prototype-previews.mjs --bases-only
 ```
 
-Canonical conversion and fallback preview rendering require FFmpeg/FFprobe with
-the `lut3d`, `haldclut`, `tonemap`, `zscale`, rawvideo, PNG, and WebP
-components.
+Canonical conversion and reference-proxy generation require FFmpeg/FFprobe with
+the `tonemap`, `zscale`, rawvideo, PNG, and WebP components. LUT-applied previews
+are not stored; the browser renders them from the canonical CUBEs.
 
 Every LUT hosted by the static site is a metadata-rich CUBE. Original CUBE
 samples are retained; 3DL, CSP, Hald/strip LUT images, and the supported ACES

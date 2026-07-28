@@ -23,6 +23,7 @@ uniform int displayTransfer;
 uniform mat3 sourceToLut;
 uniform mat3 lutToDisplay;
 uniform bool applyLut;
+uniform bool sourceFlipY;
 in vec2 uv;
 out vec4 color;
 
@@ -73,7 +74,7 @@ vec3 sampleLut(vec3 encoded) {
 }
 
 void main() {
-  vec4 source = texture(sourceImage, vec2(uv.x, 1.0 - uv.y));
+  vec4 source = texture(sourceImage, vec2(uv.x, sourceFlipY ? 1.0 - uv.y : uv.y));
   vec3 lutDomain = encodeColor(sourceToLut * decodeColor(source.rgb, sourceTransfer), lutInputTransfer);
   vec3 transformed = applyLut ? sampleLut(lutDomain) : lutDomain;
   vec3 display = encodeColor(lutToDisplay * decodeColor(transformed, lutOutputTransfer), displayTransfer);
@@ -205,7 +206,13 @@ export class LutRenderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceImage);
+    if (sourceImage.dataType === "float" && sourceImage.data instanceof Float32Array) {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, sourceWidth, sourceHeight, 0, gl.RGBA, gl.FLOAT, sourceImage.data);
+    } else if (sourceImage.dataType === "uint8" && ArrayBuffer.isView(sourceImage.data)) {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sourceWidth, sourceHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, sourceImage.data);
+    } else {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceImage);
+    }
 
     if (lut) {
       gl.activeTexture(gl.TEXTURE1);
@@ -222,6 +229,7 @@ export class LutRenderer {
     gl.uniform1i(gl.getUniformLocation(this.program, "lutInputTransfer"), lutInputSpace.transfer);
     gl.uniform1i(gl.getUniformLocation(this.program, "lutOutputTransfer"), lutOutputSpace.transfer);
     gl.uniform1i(gl.getUniformLocation(this.program, "displayTransfer"), displaySpace.transfer);
+    gl.uniform1i(gl.getUniformLocation(this.program, "sourceFlipY"), sourceImage.flipY === false ? 0 : 1);
     gl.uniformMatrix3fv(gl.getUniformLocation(this.program, "sourceToLut"), false, glMatrix(conversionMatrix(sourceSpace.id, lutInputSpace.id)));
     gl.uniformMatrix3fv(gl.getUniformLocation(this.program, "lutToDisplay"), false, glMatrix(conversionMatrix(lutOutputSpace.id, displaySpace.id)));
     gl.uniform1i(gl.getUniformLocation(this.program, "applyLut"), options.applyLut === false ? 0 : 1);

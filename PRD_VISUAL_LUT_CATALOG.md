@@ -624,22 +624,26 @@ Every image×LUT combination has one status:
 
 Only `validated` and `converted` appear by default.
 
-### 12.4 Pre-rendered versus client-rendered
+### 12.4 Client-rendered previews
 
-MVP uses pre-rendered thumbnails for correctness and broad device support.
-Client-side WebGL may provide interactive full-resolution adjustments later,
-but it must use the same catalog metadata and be regression-tested against the
-build-time reference renderer.
+LUTr renders thumbnails, comparisons, and detail views in the browser from the
+selected reference pixels and the canonical CUBE. No LUT-applied preview images
+are stored in the repository. The same renderer handles local user images, so
+changing the reference color-space declaration immediately rebuilds the visible
+previews.
 
-### 12.5 Preview explosion control
+Unknown color paths remain blocked. Client rendering must use the catalog
+metadata and be regression-tested with known image/LUT combinations.
 
-The pipeline must not blindly generate every possible Cartesian product.
+### 12.5 Rendering workload control
 
-- Generate validated and convertible combinations.
-- Generate illustrative combinations only for explicitly enabled collections.
+The client must not render every possible Cartesian product.
+
+- Render only visible cards.
+- Cancel a render generation when the reference or filters change.
+- Cache decoded reference images and parsed CUBEs in memory.
 - Skip incompatible and unknown paths by default.
-- Use content-addressed output names to reuse unchanged previews.
-- Generate multiple responsive sizes from one color-managed master.
+- Preserve a non-rendering metadata view for incomplete transforms.
 
 ## 13. Data model
 
@@ -744,11 +748,8 @@ The pipeline must not blindly generate every possible Cartesian product.
   ],
   "rendererVersion": "…",
   "warnings": [],
-  "derivatives": {
-    "thumb": "assets/previews/…-320.avif",
-    "card": "assets/previews/…-640.avif",
-    "detail": "assets/previews/…-1600.avif"
-  }
+  "clientLut": "assets/luts/stable-lut-id.cube",
+  "clientLutSize": 33
 }
 ```
 
@@ -999,7 +1000,7 @@ If privacy-preserving usage analytics are later approved:
 ### Phase 1: Catalog MVP
 
 - Static image chooser, gallery, detail pages, core filters, core sorts,
-  pre-rendered thumbnails, and GitHub Pages deployment.
+  client-rendered WebGL previews, and GitHub Pages deployment.
 
 ### Phase 2: Comparison and diagnostics
 
@@ -1008,8 +1009,8 @@ If privacy-preserving usage analytics are later approved:
 
 ### Phase 3: Local interactive processing
 
-- Optional browser-side LUT application to locally chosen user images, with no
-  upload, after WebGL output matches the reference renderer.
+- Browser-side LUT application to locally chosen user images, including
+  floating-point EXR/HDR sources, with no upload.
 
 ### Phase 4: Ecosystem
 

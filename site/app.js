@@ -1,6 +1,7 @@
 import { LutRenderer } from "./lut-renderer.js";
 import { colorSpace, colorSpaceLabel, colorSpaceOptions } from "./color-spaces.js";
 import { composeCube, downloadText, parseCube } from "./lut-io.js";
+import { decodeImageFile } from "./image-loader.js";
 
 const state = {
   catalog: null,
@@ -37,7 +38,7 @@ const els = Object.fromEntries([
   "viewerClose","viewerOriginal","viewerAfter","viewerAfterWrap","wipeRange","viewerCollection",
   "viewerTitle","viewerBadges","viewerNotice","viewerMetadata","viewerSource","compareFromViewer",
   "compareTray","compareCount","compareNames","clearCompare","openCompare","compareDialog",
-  "compareClose","compareGrid","uploadImageButton","imageUpload","imageColorSpace","selectedColorSpace","viewerCanvas","viewerOriginalCanvas",
+  "compareClose","compareGrid","uploadImageButton","imageUpload","imageColorSpace","imageColorSpaceHint","viewerCanvas","viewerOriginalCanvas",
   "viewerLutInputSpace","viewerLutOutputSpace","viewerDownloadInput","viewerDownloadOutput","downloadConvertedLut",
   "converterTab","converterPanel","converterClose","converterFile","converterLutInput","converterLutOutput",
   "converterNewInput","converterNewOutput","converterSize","converterStatus","converterDownload",
@@ -53,10 +54,6 @@ const label = (value) => value
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
 }[character]));
-
-function previewPath(imageId, lut) {
-  return lut.previewType ? `./assets/previews/${imageId}/${lut.id}.webp` : null;
-}
 
 function lutPipeline(lut, image = selectedImage()) {
   return {
@@ -131,41 +128,43 @@ function renderSelectedReference() {
   els.selectedReferenceImage.alt = image.title;
   els.catalogTitle.textContent = image.title;
   els.selectedReferenceMeta.textContent = `${image.encoding} · ${image.license} · ${image.tags.join(" · ")}`;
-  els.selectedColorSpace.textContent = `Working pixels: ${colorSpaceLabel(image.colorSpace)}`;
+  els.imageColorSpace.value = image.colorSpace || "";
+  els.imageColorSpaceHint.textContent = image.colorSpaceReason ||
+    `Catalog metadata declares ${colorSpaceLabel(image.colorSpace)}. Change this if the reference was encoded differently.`;
+  els.imageColorSpaceHint.dataset.confidence = image.colorSpaceConfidence || "declared";
 }
 
 async function useUploadedImage(file) {
   if (!file) return;
-  const selectedColorSpace = els.imageColorSpace.value;
-  if (!colorSpace(selectedColorSpace)) {
-    alert("Choose the image color space before uploading.");
-    els.imageUpload.value = "";
-    return;
-  }
-  const objectUrl = URL.createObjectURL(file);
-  const imageElement = new Image();
-  imageElement.decoding = "async";
-  imageElement.src = objectUrl;
+  const originalLabel = els.uploadImageButton.textContent;
+  els.uploadImageButton.disabled = true;
+  els.uploadImageButton.textContent = "Reading image…";
   try {
-    await imageElement.decode();
-  } catch {
-    URL.revokeObjectURL(objectUrl);
-    alert("LUTr could not decode that image. Please use JPEG, PNG, WebP, or AVIF.");
+    const decoded = await decodeImageFile(file);
+    if (state.customImage?.proxy) URL.revokeObjectURL(state.customImage.proxy);
+    state.customImage = {
+      id: "upload",
+      title: file.name,
+      subtitle: `Your local ${decoded.format} · processed only in this browser`,
+      proxy: decoded.proxy,
+      element: decoded.source,
+      displayElement: decoded.image,
+      license: "Private local upload",
+      tags: ["upload", "local", "client-rendered", decoded.format.toLowerCase()],
+      encoding: `${decoded.format} · guessed ${colorSpaceLabel(decoded.guess.id)}`,
+      colorSpace: decoded.guess.id,
+      colorSpaceReason: `${decoded.guess.confidence === "embedded" ? "Embedded metadata" : "Automatic guess"}: ${decoded.guess.reason} Confirm or override this value.`,
+      colorSpaceConfidence: decoded.guess.confidence,
+    };
+    setImage("upload");
+  } catch (error) {
+    alert(`LUTr could not decode that image. ${error.message}`);
     return;
+  } finally {
+    els.imageUpload.value = "";
+    els.uploadImageButton.disabled = false;
+    els.uploadImageButton.textContent = originalLabel;
   }
-  if (state.customImage?.proxy) URL.revokeObjectURL(state.customImage.proxy);
-  state.customImage = {
-    id: "upload",
-    title: file.name,
-    subtitle: "Your local image · processed only in this browser",
-    proxy: objectUrl,
-    element: imageElement,
-    license: "Private local upload",
-    tags: ["upload", "local", "client-rendered"],
-    encoding: colorSpaceLabel(selectedColorSpace),
-    colorSpace: selectedColorSpace,
-  };
-  setImage("upload");
 }
 
 function facetState(group, value) {
@@ -260,7 +259,6 @@ function metricTag(lut) {
 
 function card(lut) {
   const image = selectedImage();
-  const preview = previewPath(image.id, lut);
   const pipeline = lutPipeline(lut, image);
   const clientPreview = Boolean(lutRenderer && lut.clientLut && pipelineReady(pipeline));
   const needsColorSpace = Boolean(lut.clientLut && !pipelineReady(pipeline));
@@ -268,7 +266,7 @@ function card(lut) {
   const selected = state.compare.includes(lut.id);
   return `<article class="lut-card" data-lut="${lut.id}">
     <button class="lut-preview" data-open="${lut.id}" aria-label="View ${lut.title}">
-      ${clientPreview ? `<canvas data-client-preview="${lut.id}" aria-label="${lut.title} applied to ${image.title}"></canvas>` : needsColorSpace ? `<span class="no-preview">Input/output color space required<br />Open to define the pipeline</span>` : preview ? `<img src="${preview}" alt="${lut.title} applied to ${image.title}" loading="lazy" />` : `<span class="no-preview">Metadata only<br />Color path not yet validated</span>`}
+      ${clientPreview ? `<canvas data-client-preview="${lut.id}" aria-label="${lut.title} applied to ${image.title}"></canvas>` : needsColorSpace ? `<span class="no-preview">Input/output color space required<br />Open to define the pipeline</span>` : `<span class="no-preview">Metadata only<br />Color path not yet validated</span>`}
       <span class="status">${clientPreview ? "Color managed" : needsColorSpace ? "Space required" : lut.previewType ? "Illustrative" : "No preview"}</span>
     </button>
     <div class="lut-card-body">
@@ -517,7 +515,7 @@ async function openCompareDialog() {
   const luts = state.compare.map((id) => state.catalog.luts.find((lut) => lut.id === id)).filter(Boolean);
   els.compareGrid.innerHTML = luts.map((lut) => `
     <article class="compare-item">
-      <img src="${previewPath(image.id, lut) || image.proxy}" alt="${lut.title} on ${image.title}" />
+      <img src="${image.id === "upload" ? image.proxy : `./${image.proxy}`}" alt="${image.title} before ${lut.title}" />
       <canvas data-compare-preview="${lut.id}" hidden></canvas>
       <h3>${lut.title}</h3><p>${lut.collection} · ${lut.license}</p>
     </article>`).join("");
@@ -608,13 +606,14 @@ function bindEvents() {
     setImage(image.id);
   });
   els.imageColorSpace.addEventListener("change", () => {
-    els.uploadImageButton.disabled = !els.imageColorSpace.value;
-    if (state.imageId === "upload" && state.customImage && els.imageColorSpace.value) {
-      state.customImage.colorSpace = els.imageColorSpace.value;
-      state.customImage.encoding = colorSpaceLabel(els.imageColorSpace.value);
-      renderSelectedReference();
-      renderCatalog();
-    }
+    const image = selectedImage();
+    if (!image || !colorSpace(els.imageColorSpace.value)) return;
+    image.colorSpace = els.imageColorSpace.value;
+    image.colorSpaceReason = `Chosen manually: interpret the decoded pixels as ${colorSpaceLabel(image.colorSpace)}.`;
+    image.colorSpaceConfidence = "user";
+    if (image.id === "upload") image.encoding = `${image.subtitle.split(" · ")[0].replace("Your local ", "")} · ${colorSpaceLabel(image.colorSpace)}`;
+    renderSelectedReference();
+    renderCatalog();
   });
   els.uploadImageButton.addEventListener("click", () => els.imageUpload.click());
   els.imageUpload.addEventListener("change", () => useUploadedImage(els.imageUpload.files?.[0]));
@@ -670,7 +669,10 @@ async function init() {
   for (const select of [
     els.converterLutInput, els.converterLutOutput, els.converterNewInput, els.converterNewOutput,
   ]) select.innerHTML = spaceOptions;
-  els.uploadImageButton.disabled = true;
+  for (const image of state.catalog.images) {
+    image.colorSpaceConfidence ||= "declared";
+    image.colorSpaceReason ||= `Catalog metadata declares ${colorSpaceLabel(image.colorSpace)}. Change this if the reference was encoded differently.`;
+  }
   try {
     lutRenderer = new LutRenderer();
   } catch (error) {

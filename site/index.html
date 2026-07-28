@@ -7,6 +7,9 @@
     <meta name="theme-color" content="#0d0f0e" />
     <title>LUTr — LUTrepository</title>
     <link rel="stylesheet" href="./styles.css" />
+    <script type="importmap">
+      {"imports":{"three":"./vendor/three/build/three.module.min.js"}}
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#catalog">Skip to catalog</a>
@@ -43,12 +46,8 @@
           <div><p class="eyebrow">01 / Reference</p><h2 id="imagesTitle">Choose what to test</h2></div>
           <div class="reference-actions">
             <p>Skin, charts, interiors, landscapes, reflections, and controlled light.</p>
-            <label class="compact-field">Upload color space
-              <select id="imageColorSpace" required></select>
-              <small>Required; interpreted as the image's decoded RGB encoding.</small>
-            </label>
             <button class="primary-button" id="uploadImageButton">Upload your image</button>
-            <input id="imageUpload" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden />
+            <input id="imageUpload" type="file" hidden />
           </div>
         </div>
         <div class="image-rail" id="imageRail" role="list"></div>
@@ -85,12 +84,15 @@
         <div class="catalog-main">
           <div class="selected-reference" id="selectedReference">
             <img id="selectedReferenceImage" alt="" />
-            <div>
+            <div class="selected-reference-copy">
               <p class="eyebrow">Selected reference</p>
               <h2 id="catalogTitle">Loading…</h2>
               <p id="selectedReferenceMeta"></p>
-              <span class="color-path" id="selectedColorSpace"></span>
             </div>
+            <label class="reference-space-field">Reference image color space
+              <select id="imageColorSpace"></select>
+              <small id="imageColorSpaceHint">Automatic or declared guess; confirm before judging the LUT.</small>
+            </label>
             <button class="quiet-button mobile-filter-button" id="openFilters">Filters <span id="activeFilterCount"></span></button>
           </div>
 
