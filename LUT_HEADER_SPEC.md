@@ -221,6 +221,7 @@ folder changes every id in it and orphans every cached preview.
 | Value | Meaning |
 |---|---|
 | `declared-by-source` | Upstream states the encoding explicitly. |
+| `inferred-from-source-label` | A structured upstream camera/gamma label maps to a LUTr profile id; useful evidence, but not per-file technical documentation. |
 | `documented-primaries-assumed` | Transfer documented, primaries inferred. |
 | `assumed-display-referred` | No statement; treated as sRGB in and out. |
 | `descriptor-only` | Upstream gives prose only, not a resolvable encoding. |
@@ -265,6 +266,14 @@ complete set of valid ids today:
 srgb              rec709            rec709-gamma24    linear-rec709
 display-p3        linear-p3         rec2020-gamma24   linear-rec2020
 acescg            aces2065-1
+sony-slog3-sgamut3             sony-slog2-sgamut
+sony-slog1-sgamut              arri-logc3-ei800-awg3
+panasonic-vlog-vgamut          panasonic-vlogl-vgamut
+dji-dlog-dgamut                bmd-film
+bmd-film-4k                    canon-cinestyle
+canon-log-cinema-gamut         canon-log2-cinema-gamut
+canon-log3-cinema-gamut        red-logfilm-rwg
+panasonic-cinelike-d           gopro-protune-native
 ```
 
 Anything else resolves to `null` → `pipelineReady()` returns false → the card
@@ -273,9 +282,9 @@ preview.
 
 **This is the single most common way to break a LUT.** The schema-2 converter
 lower-cases valid ids and promotes exact resolvable descriptors such as
-`ACES2065-1`. In the 2026-07-28 build, 422 of 502 canonical transforms have a
+`ACES2065-1`. In the 2026-07-28 build, 976 of 1,181 canonical transforms have a
 complete input/output id path. Of those, six are still classified as bounded
-approximations, leaving 416 immediately previewable transforms.
+approximations, leaving 970 immediately previewable transforms.
 
 The cause in most cases is prose leaking into an enum field:
 

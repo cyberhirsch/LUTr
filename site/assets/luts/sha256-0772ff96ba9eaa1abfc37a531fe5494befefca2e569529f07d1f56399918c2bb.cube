@@ -13,10 +13,10 @@
 # LUTr-License-Basis: repo-license-file
 # LUTr-Transform-Class: tone-map
 # LUTr-Tags: technical, hdr, sdr, tone-map, tone-mapping, 3d-lut, cube
-# LUTr-Input-Color-Space: 
+# LUTr-Input-Color-Space:
 # LUTr-Input-Gamut: unspecified
 # LUTr-Input-Transfer: unspecified
-# LUTr-Output-Color-Space: 
+# LUTr-Output-Color-Space:
 # LUTr-Output-Gamut: unspecified
 # LUTr-Output-Transfer: unspecified
 # LUTr-Color-Space-Confidence: unverified

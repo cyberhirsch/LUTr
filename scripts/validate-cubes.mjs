@@ -30,6 +30,11 @@ const required = [
 const validColorSpaces = new Set([
   "", "srgb", "rec709", "rec709-gamma24", "linear-rec709", "display-p3",
   "linear-p3", "rec2020-gamma24", "linear-rec2020", "acescg", "aces2065-1",
+  "sony-slog3-sgamut3", "sony-slog2-sgamut", "sony-slog1-sgamut",
+  "arri-logc3-ei800-awg3", "panasonic-vlog-vgamut", "panasonic-vlogl-vgamut",
+  "dji-dlog-dgamut", "bmd-film", "bmd-film-4k", "canon-cinestyle",
+  "canon-log-cinema-gamut", "canon-log2-cinema-gamut", "canon-log3-cinema-gamut",
+  "red-logfilm-rwg", "panasonic-cinelike-d", "gopro-protune-native",
 ]);
 const validClasses = new Set([
   "creative-look", "film-emulation", "camera-transform", "display-transform",
@@ -37,7 +42,7 @@ const validClasses = new Set([
 ]);
 const validConfidence = new Set([
   "declared-by-source", "documented-primaries-assumed", "assumed-display-referred",
-  "descriptor-only", "camera-profile-input-required", "unverified",
+  "descriptor-only", "camera-profile-input-required", "inferred-from-source-label", "unverified",
 ]);
 const validLicenseBasis = new Set(["per-asset-notice", "repo-license-file", "site-terms", "assumed"]);
 const validFormats = new Set(["CUBE", "3DL", "CLF", "CSP", "HALD-PNG", "HALD-TIF"]);

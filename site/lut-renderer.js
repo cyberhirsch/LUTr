@@ -42,6 +42,29 @@ float decodeValue(float value, int transfer) {
   if (transfer == 1) return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4);
   if (transfer == 2) return value < 0.081 ? value / 4.5 : pow((value + 0.099) / 1.099, 1.0 / 0.45);
   if (transfer == 3) return signedPower(value, 2.4);
+  if (transfer == 4) {
+    float cut = 171.2102946929 / 1023.0;
+    return value >= cut
+      ? pow(10.0, (value * 1023.0 - 420.0) / 261.5) * 0.19 - 0.01
+      : (value * 1023.0 - 95.0) * 0.01125 / (171.2102946929 - 95.0);
+  }
+  if (transfer == 5) return value > 0.1496582
+    ? (pow(10.0, (value - 0.385537) / 0.24719) - 0.052272) / 5.555556
+    : (value - 0.092809) / 5.367655;
+  if (transfer == 6) return value < 0.181
+    ? (value - 0.125) / 5.6
+    : pow(10.0, (value - 0.598206) / 0.241514) - 0.00873;
+  if (transfer == 7) return (pow(10.0, (value - 0.616596 - 0.03) / 0.432699) - 0.037584) / 4.5;
+  if (transfer == 8) return pow(10.0, (value - 0.616596 - 0.03) / 0.432699) - 0.037584;
+  if (transfer == 9) return max(0.0, pow(10.0, (value - 0.53) / 0.38) - 0.01);
+  if (transfer == 10) return value < 0.0928 ? (value - 0.0928) / 4.5 : pow(10.0, (value - 0.456) / 0.224) - 0.005;
+  if (transfer == 11) return signedPower((value - 0.035) / 0.965, 2.2);
+  if (transfer == 12) return pow(10.0, (value - 0.4) / 0.3) - 0.01;
+  if (transfer == 13) return pow(10.0, (value - 0.38) / 0.28) - 0.01;
+  if (transfer == 14) return pow(10.0, (value - 0.4) / 0.32) - 0.01;
+  if (transfer == 15) return pow(10.0, (value - 0.685) / 0.2471896) - 0.01;
+  if (transfer == 16) return signedPower(value, 2.4);
+  if (transfer == 17) return signedPower(value, 2.2);
   return value;
 }
 
@@ -50,6 +73,26 @@ float encodeValue(float value, int transfer) {
   if (transfer == 1) return value <= 0.0031308 ? 12.92 * value : 1.055 * signedPower(value, 1.0 / 2.4) - 0.055;
   if (transfer == 2) return value < 0.018 ? 4.5 * value : 1.099 * signedPower(value, 0.45) - 0.099;
   if (transfer == 3) return signedPower(value, 1.0 / 2.4);
+  if (transfer == 4) return value >= 0.01125
+    ? (420.0 + log((value + 0.01) / 0.19) / log(10.0) * 261.5) / 1023.0
+    : (value * (171.2102946929 - 95.0) / 0.01125 + 95.0) / 1023.0;
+  if (transfer == 5) return value > 0.010591
+    ? 0.24719 * log(5.555556 * value + 0.052272) / log(10.0) + 0.385537
+    : 5.367655 * value + 0.092809;
+  if (transfer == 6) return value < 0.01
+    ? 5.6 * value + 0.125
+    : 0.241514 * log(value + 0.00873) / log(10.0) + 0.598206;
+  if (transfer == 7) return 0.432699 * log(4.5 * value + 0.037584) / log(10.0) + 0.646596;
+  if (transfer == 8) return 0.432699 * log(value + 0.037584) / log(10.0) + 0.646596;
+  if (transfer == 9) return 0.38 * log(max(0.0, value) + 0.01) / log(10.0) + 0.53;
+  if (transfer == 10) return value < 0.0 ? 4.5 * value + 0.0928 : 0.224 * log(value + 0.005) / log(10.0) + 0.456;
+  if (transfer == 11) return 0.965 * signedPower(value, 1.0 / 2.2) + 0.035;
+  if (transfer == 12) return 0.3 * log(value + 0.01) / log(10.0) + 0.4;
+  if (transfer == 13) return 0.28 * log(value + 0.01) / log(10.0) + 0.38;
+  if (transfer == 14) return 0.32 * log(value + 0.01) / log(10.0) + 0.4;
+  if (transfer == 15) return 0.2471896 * log(value + 0.01) / log(10.0) + 0.685;
+  if (transfer == 16) return signedPower(value, 1.0 / 2.4);
+  if (transfer == 17) return signedPower(value, 1.0 / 2.2);
   return value;
 }
 

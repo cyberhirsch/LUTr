@@ -19,6 +19,15 @@ asset.
 | Missing captures | 7 |
 | Invalid CUBE files | 2 |
 | Overlaps with the pre-existing LUTr catalog | 0 |
+| Camera-label profiles resolved | 337 |
+| Camera-label profiles still partial | 5 |
+
+The 337 resolved profiles retain `Color-Space-Confidence:
+inferred-from-source-label`; the upstream gamma selector is evidence, not a
+manufacturer-verified declaration embedded in the file. Legacy Blackmagic
+Film, DJI D-Log, CineStyle, Cinelike-D, and GoPro profiles are explicitly
+labelled as approximations in the browser. Five `RED Color` records identify a
+gamut but no transfer curve, so their `Input-Color-Space` remains empty.
 
 The importer compares the declared grid, domain, and normalized floating-point
 sample sequence. It ignores filenames, titles, comments, whitespace, and number

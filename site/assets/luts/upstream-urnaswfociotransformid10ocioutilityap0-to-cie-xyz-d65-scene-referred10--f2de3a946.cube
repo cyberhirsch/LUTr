@@ -16,7 +16,7 @@
 # LUTr-Input-Color-Space: aces2065-1
 # LUTr-Input-Gamut: aces-ap0
 # LUTr-Input-Transfer: linear
-# LUTr-Output-Color-Space: 
+# LUTr-Output-Color-Space:
 # LUTr-Output-Gamut: unspecified
 # LUTr-Output-Transfer: unspecified
 # LUTr-Color-Space-Confidence: descriptor-only

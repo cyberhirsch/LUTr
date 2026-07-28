@@ -19,7 +19,7 @@
 # LUTr-Output-Color-Space: srgb
 # LUTr-Output-Gamut: rec709
 # LUTr-Output-Transfer: srgb
-# LUTr-Color-Space-Confidence: declared-by-source
+# LUTr-Color-Space-Confidence: inferred-from-source-label
 # LUTr-Domain-Normalized: true
 # LUTr-Shaper: none
 # LUTr-Original-Grid: 32x32x32

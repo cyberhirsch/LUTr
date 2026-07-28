@@ -13,7 +13,7 @@
 # LUTr-License-Basis: repo-license-file
 # LUTr-Transform-Class: color-space-conversion
 # LUTr-Tags: technical, aces, ocio, clf, color-management, cube
-# LUTr-Input-Color-Space: 
+# LUTr-Input-Color-Space:
 # LUTr-Input-Gamut: sony-venice-s-gamut3
 # LUTr-Input-Transfer: sony-s-log3
 # LUTr-Output-Color-Space: aces2065-1

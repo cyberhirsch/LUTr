@@ -13,10 +13,10 @@
 # LUTr-License-Basis: repo-license-file
 # LUTr-Transform-Class: color-space-conversion
 # LUTr-Tags: technical, aces, ocio, clf, color-management, cube
-# LUTr-Input-Color-Space: 
+# LUTr-Input-Color-Space:
 # LUTr-Input-Gamut: unspecified
 # LUTr-Input-Transfer: arri-logc4
-# LUTr-Output-Color-Space: 
+# LUTr-Output-Color-Space:
 # LUTr-Output-Gamut: unspecified
 # LUTr-Output-Transfer: linear
 # LUTr-Color-Space-Confidence: descriptor-only

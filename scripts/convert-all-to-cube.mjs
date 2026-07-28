@@ -14,6 +14,11 @@ const toolVersion = "2.0.0";
 const validColorSpaces = new Set([
   "srgb", "rec709", "rec709-gamma24", "linear-rec709", "display-p3",
   "linear-p3", "rec2020-gamma24", "linear-rec2020", "acescg", "aces2065-1",
+  "sony-slog3-sgamut3", "sony-slog2-sgamut", "sony-slog1-sgamut",
+  "arri-logc3-ei800-awg3", "panasonic-vlog-vgamut", "panasonic-vlogl-vgamut",
+  "dji-dlog-dgamut", "bmd-film", "bmd-film-4k", "canon-cinestyle",
+  "canon-log-cinema-gamut", "canon-log2-cinema-gamut", "canon-log3-cinema-gamut",
+  "red-logfilm-rwg", "panasonic-cinelike-d", "gopro-protune-native",
 ]);
 const offsetArg = process.argv.find((value) => value.startsWith("--offset="));
 const limitArg = process.argv.find((value) => value.startsWith("--limit="));
@@ -197,6 +202,22 @@ function colorParts(id) {
     "display-p3": ["display-p3", "srgb"], "linear-p3": ["display-p3", "linear"],
     "rec2020-gamma24": ["rec2020", "gamma24"], "linear-rec2020": ["rec2020", "linear"],
     acescg: ["aces-ap1", "linear"], "aces2065-1": ["aces-ap0", "linear"],
+    "sony-slog3-sgamut3": ["sony-s-gamut3", "sony-s-log3"],
+    "sony-slog2-sgamut": ["sony-s-gamut", "sony-s-log2"],
+    "sony-slog1-sgamut": ["sony-s-gamut", "sony-s-log1"],
+    "arri-logc3-ei800-awg3": ["arri-wide-gamut-3", "arri-logc3-ei800"],
+    "panasonic-vlog-vgamut": ["panasonic-v-gamut", "panasonic-v-log"],
+    "panasonic-vlogl-vgamut": ["panasonic-v-gamut", "panasonic-v-log-l"],
+    "dji-dlog-dgamut": ["dji-d-gamut", "dji-d-log"],
+    "bmd-film": ["bmd-film-gamut", "bmd-film"],
+    "bmd-film-4k": ["bmd-film-gamut", "bmd-film-4k"],
+    "canon-cinestyle": ["rec709", "canon-cinestyle"],
+    "canon-log-cinema-gamut": ["canon-cinema-gamut", "canon-log"],
+    "canon-log2-cinema-gamut": ["canon-cinema-gamut", "canon-log2"],
+    "canon-log3-cinema-gamut": ["canon-cinema-gamut", "canon-log3"],
+    "red-logfilm-rwg": ["red-wide-gamut-rgb", "red-logfilm"],
+    "panasonic-cinelike-d": ["rec709", "panasonic-cinelike-d"],
+    "gopro-protune-native": ["gopro-protune-native", "gopro-protune"],
   }[id] || ["unspecified", "unspecified"];
 }
 

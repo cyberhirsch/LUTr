@@ -13,13 +13,13 @@
 # LUTr-License-Basis: site-terms
 # LUTr-Transform-Class: creative-look
 # LUTr-Tags: creative, freshluts, community, cube, yellow, low-key, bmd-film-4k, cinematic
-# LUTr-Input-Color-Space:
+# LUTr-Input-Color-Space: bmd-film-4k
 # LUTr-Input-Gamut: bmd-film-gamut
 # LUTr-Input-Transfer: bmd-film-4k
 # LUTr-Output-Color-Space: srgb
 # LUTr-Output-Gamut: rec709
 # LUTr-Output-Transfer: srgb
-# LUTr-Color-Space-Confidence: camera-profile-input-required
+# LUTr-Color-Space-Confidence: inferred-from-source-label
 # LUTr-Domain-Normalized: true
 # LUTr-Shaper: none
 # LUTr-Original-Grid: 33x33x33
